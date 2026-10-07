@@ -1,192 +1,180 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ระบบติดตามแปลงเกษตร เขตประเวศ</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><style>*{box-sizing:border-box}body{margin:0;font-family:system-ui,"Noto Sans Thai",sans-serif;background:#f4f7f5;color:#173b2a}header{background:#176b43;color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px}header h1{margin:0;font-size:21px}.wrap{max-width:1400px;margin:auto;padding:16px}.card{background:#fff;border:1px solid #dce7e0;border-radius:14px;padding:16px;box-shadow:0 2px 10px #0000000a}.login{max-width:440px;margin:60px auto}.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}#map{height:540px;border-radius:10px}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}input,select,textarea,button{font:inherit}input,select,textarea{width:100%;padding:9px;border:1px solid #cbd8d0;border-radius:8px;background:#fff}textarea{min-height:90px;resize:vertical}button{border:0;border-radius:8px;padding:9px 13px;cursor:pointer;background:#176b43;color:#fff}button.secondary{background:#e8f0eb;color:#174c35}label{display:block;font-size:13px;font-weight:700;margin:9px 0 5px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}.stat{padding:13px;border-radius:10px;background:#eef6f1}.stat b{font-size:24px;display:block}.badge{display:inline-block;padding:4px 8px;border-radius:99px;font-size:12px;font-weight:700}.ok{background:#dff3e7;color:#176b43}.wait{background:#fff0d4;color:#8a5b00}.no{background:#f8dddd;color:#9a2929}.hidden{display:none!important}.modal{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:16px;z-index:3000}.modalBox{background:#fff;width:min(720px,100%);max-height:90vh;overflow:auto;border-radius:16px;padding:20px;box-shadow:0 12px 40px #0004}.modalHead{display:flex;justify-content:space-between;align-items:center;gap:10px}.modalHead h3{margin:0}.closeBtn{background:#eef3ef;color:#174c35}.hint{font-size:12px;color:#60756a;margin-top:4px}.muted{color:#60756a;font-size:13px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid #e5ece8;text-align:left}.error{background:#fff0f0;color:#9a2929;padding:10px;border-radius:8px;margin:8px 0}.success{background:#e9f8ef;color:#176b43;padding:10px;border-radius:8px;margin:8px 0}.photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.photo{width:110px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #ddd}@media(max-width:900px){.grid{grid-template-columns:1fr}#map{height:420px}.stats{grid-template-columns:1fr 1fr}}.dash{margin-bottom:16px}.dashHead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.dashHead h2{margin:0}.dashGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.dashCard{background:#fff;border:1px solid #dce7e0;border-radius:14px;padding:16px}.dashCard b{display:block;font-size:30px;margin-top:5px}.dashAgri{background:#eef8f1}.dashNo{background:#fff0f0}.dashWait{background:#fff7e5}.pieWrap{display:grid;grid-template-columns:260px 1fr;gap:28px;align-items:center;margin-top:16px}.pie{width:240px;height:240px;border-radius:50%;margin:auto;background:conic-gradient(#176b43 0deg 120deg,#a83d3d 120deg 240deg,#d49a19 240deg 360deg);box-shadow:inset 0 0 0 1px #0001}.legend{display:grid;gap:12px}.legendRow{display:flex;align-items:center;gap:10px}.dot{width:14px;height:14px;border-radius:50%;flex:none}.reportTitle{display:none}@media(max-width:900px){.dashGrid{grid-template-columns:1fr}.pieWrap{grid-template-columns:1fr}.pie{width:210px;height:210px}}@media print{@page{size:A4 portrait;margin:14mm}body{background:#fff}.dash{display:block!important}.dashHead button,#userArea,#mainView,.stats{display:none!important}.reportTitle{display:block;text-align:center;margin:0 0 14px}.dashCard{box-shadow:none;break-inside:avoid}.pieWrap{grid-template-columns:260px 1fr}.pie{print-color-adjust:exact;-webkit-print-color-adjust:exact}.dashGrid{grid-template-columns:repeat(3,1fr)}}</style></head><body><header><h1>🌾 ระบบติดตามแปลงเกษตร เขตประเวศ</h1><div id="userArea"><span style="color:#fff">ใช้งานโดยไม่ต้องเข้าสู่ระบบ</span></div></header><div id="appView" class="wrap"><div class="toolbar" style="margin-bottom:12px"><button onclick="showDashboard()">📊 แดชบอร์ดสรุป</button></div><div class="stats"><div class="stat">แปลงทั้งหมด<b id="sTotal">0</b></div><div class="stat">ตรวจแล้ว<b id="sVisited">0</b></div><div class="stat">ยังเป็นเกษตร<b id="sAgri">0</b></div><div class="stat">รอตรวจ<b id="sWait">0</b></div></div><div id="dashboardView" class="dash hidden">
-<div class="card">
-<div class="reportTitle"><h1>รายงานสรุปผลการตรวจแปลงเกษตร เขตประเวศ</h1><div id="printYear"></div></div>
-<div class="dashHead"><div><h2>📊 แดชบอร์ดสรุปผลการตรวจ</h2><div class="muted">สรุปตามปีภาษีที่เลือก</div></div><div class="toolbar" style="margin:0"><select id="dashYear" style="width:150px"></select><button onclick="printDashboard()">🖨️ พิมพ์รายงาน</button><button class="secondary" onclick="showMain()">← กลับหน้าหลัก</button></div></div>
-<div class="dashGrid">
-<div class="dashCard dashAgri">ตรวจแล้ว • ยังเป็นเกษตร<b id="dAgri">0</b>แปลง</div>
-<div class="dashCard dashNo">ตรวจแล้ว • ไม่เป็นเกษตร<b id="dNoAgri">0</b>แปลง</div>
-<div class="dashCard dashWait">ยังไม่ได้ลงพื้นที่<b id="dWait">0</b>แปลง</div>
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ระบบติดตามแปลงเกษตร เขตประเวศ</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,"Noto Sans Thai",sans-serif;background:#f4f7f5;color:#173b2a}
+header{background:#176b43;color:#fff;padding:16px 22px}header h1{margin:0;font-size:21px}
+.wrap{max-width:1400px;margin:auto;padding:16px}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+button,select,input,textarea{font:inherit}button{border:0;border-radius:8px;padding:9px 13px;cursor:pointer;background:#176b43;color:#fff}
+button.secondary{background:#e8f0eb;color:#174c35}select,input,textarea{padding:9px;border:1px solid #cbd8d0;border-radius:8px;background:#fff}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.card{background:#fff;border:1px solid #dce7e0;border-radius:14px;padding:16px;box-shadow:0 2px 10px #0000000a}
+#map{height:560px;border-radius:10px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}.stat{background:#eef6f1;padding:13px;border-radius:10px}.stat b{display:block;font-size:24px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}label{display:block;font-size:13px;font-weight:700;margin:9px 0 5px}
+.badge{display:inline-block;padding:4px 8px;border-radius:99px;font-size:12px;font-weight:700}.ok{background:#dff3e7;color:#176b43}.wait{background:#fff0d4;color:#8a5b00}.no{background:#f8dddd;color:#9a2929}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid #e5ece8;text-align:left}
+.photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.photo{width:110px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #ddd}
+.muted{color:#60756a;font-size:13px}.error{background:#fff0f0;color:#9a2929;padding:10px;border-radius:8px;margin:8px 0}.success{background:#e9f8ef;color:#176b43;padding:10px;border-radius:8px;margin:8px 0}
+.hidden{display:none!important}@media(max-width:900px){.grid{grid-template-columns:1fr}#map{height:430px}.stats{grid-template-columns:1fr 1fr}.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>🌾 ระบบติดตามแปลงเกษตร เขตประเวศ</h1></header>
+<main class="wrap">
+<div id="message"></div>
+<div class="stats">
+<div class="stat">แปลงทั้งหมด<b id="total">0</b></div>
+<div class="stat">ตรวจแล้ว<b id="visited">0</b></div>
+<div class="stat">ยังเป็นเกษตร<b id="agri">0</b></div>
+<div class="stat">รอตรวจ<b id="waiting">0</b></div>
 </div>
-<div class="pieWrap">
-<div id="dashPie" class="pie"></div>
-<div class="legend">
-<div class="legendRow"><span class="dot" style="background:#176b43"></span><span>ยังเป็นเกษตร <b id="lAgri">0</b> แปลง</span></div>
-<div class="legendRow"><span class="dot" style="background:#a83d3d"></span><span>ไม่เป็นเกษตร <b id="lNoAgri">0</b> แปลง</span></div>
-<div class="legendRow"><span class="dot" style="background:#d49a19"></span><span>ยังไม่ได้ลงพื้นที่ <b id="lWait">0</b> แปลง</span></div>
-<div id="dashNote" class="muted"></div>
-</div></div>
-</div></div><div id="mainView"><div class="toolbar"><select id="year" style="width:150px" onchange="refreshYear()"></select><input id="search" style="max-width:280px" placeholder="ค้นหารหัสแปลง / เลขเอกสารสิทธิ์" oninput="renderPlotList()"><button onclick="openAddPlot()">＋ เพิ่มแปลงใหม่</button><button class="secondary" onclick="openImport()">📥 นำเข้า Excel</button><button class="secondary" onclick="exportExcel()">📤 ส่งออก Excel</button><button class="secondary" onclick="loadAll()">↻ รีเฟรชข้อมูล</button><input id="importFile" type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="importExcel(this.files[0])"></div><div class="grid"><div class="card"><h3>🗺️ แผนที่แปลงเกษตร</h3><div id="map"></div><div id="plotList" style="margin-top:12px"></div></div><div class="card"><h3 id="detailTitle">เลือกแปลงจากแผนที่</h3><div id="detail"></div></div></div><div id="addPlotModal" class="modal hidden">
-<div class="modalBox">
-<div class="modalHead"><h3>＋ เพิ่มข้อมูลแปลงเกษตรใหม่</h3><button class="closeBtn" onclick="closeAddPlot()">ปิด</button></div>
-<p class="muted">ข้อมูลจะถูกบันทึกในฐานข้อมูลกลาง และแสดงบนแผนที่สำหรับเจ้าหน้าที่ที่เข้าสู่ระบบ</p>
-<div id="addPlotMsg"></div>
-<div class="row">
-<div><label>รหัสแปลง *</label><input id="newPlotCode" placeholder="เช่น P006"></div>
-<div><label>เลขเอกสารสิทธิ์</label><input id="newTitleDeed" placeholder="เช่น 123456"></div>
+<div class="toolbar">
+<label style="margin:0;display:flex;align-items:center;gap:6px">ปีภาษี
+<select id="year"></select></label>
+<input id="search" placeholder="ค้นหารหัสแปลง / เลขเอกสารสิทธิ์" style="max-width:280px">
+<button id="reload">↻ รีเฟรช</button>
 </div>
-<div class="row">
-<div><label>ละติจูด *</label><input id="newLat" type="number" step="any" placeholder="เช่น 13.674944"></div>
-<div><label>ลองจิจูด *</label><input id="newLon" type="number" step="any" placeholder="เช่น 100.680305"></div>
+<div class="grid">
+<section class="card">
+<h3>🗺️ แผนที่แปลงเกษตร</h3>
+<div id="map"></div>
+<div id="plotList" style="margin-top:12px"></div>
+</section>
+<section class="card">
+<h3 id="title">เลือกแปลงจากแผนที่</h3>
+<div id="detail"><div class="muted">เลือกจุดบนแผนที่หรือรายการด้านล่าง</div></div>
+</section>
 </div>
-<div class="row">
-<div><label>ไร่</label><input id="newRai" type="number" min="0" step="1" value="0"></div>
-<div><label>งาน</label><input id="newNgan" type="number" min="0" step="1" value="0"></div>
-</div>
-<div class="row">
-<div><label>ตารางวา</label><input id="newWah" type="number" min="0" step="0.01" value="0"></div>
-<div><label>แขวง</label><input id="newSubdistrict" value="ดอกไม้"></div>
-</div>
-<div class="row">
-<div><label>เขต</label><input id="newDistrict" value="ประเวศ"></div>
-<div><label>การใช้ประโยชน์ที่ดิน</label><input id="newLandUse" value="เกษตรกรรม"></div>
-</div>
-<label>ชนิดพืช</label><input id="newCrop" value="พืชตามข้อกำหนด">
-<div class="toolbar" style="margin-top:16px"><button onclick="saveNewPlot()">💾 บันทึกแปลง</button><button class="secondary" onclick="closeAddPlot()">ยกเลิก</button></div>
-</div></div><div id="editPlotModal" class="modal hidden">
-<div class="modalBox">
-<div class="modalHead"><h3>✏️ แก้ไขข้อมูลแปลง</h3><button class="closeBtn" onclick="closeEditPlot()">ปิด</button></div>
-<p class="muted">แก้ไขข้อมูลพื้นฐานของแปลง ข้อมูลตรวจรายปีจะไม่ถูกลบหรือทับ</p>
-<div id="editPlotMsg"></div>
-<div class="row">
-<div><label>รหัสแปลง *</label><input id="editPlotCode"></div>
-<div><label>เลขเอกสารสิทธิ์</label><input id="editTitleDeed"></div>
-</div>
-<div class="row">
-<div><label>ละติจูด *</label><input id="editLat" type="number" step="any"></div>
-<div><label>ลองจิจูด *</label><input id="editLon" type="number" step="any"></div>
-</div>
-<div class="row">
-<div><label>ไร่</label><input id="editRai" type="number" min="0" step="1"></div>
-<div><label>งาน</label><input id="editNgan" type="number" min="0" step="1"></div>
-</div>
-<div class="row">
-<div><label>ตารางวา</label><input id="editWah" type="number" min="0" step="0.01"></div>
-<div><label>แขวง</label><input id="editSubdistrict"></div>
-</div>
-<div class="row">
-<div><label>เขต</label><input id="editDistrict"></div>
-<div><label>การใช้ประโยชน์ที่ดิน</label><input id="editLandUse"></div>
-</div>
-<label>ชนิดพืช</label><input id="editCrop">
-<div class="toolbar" style="margin-top:16px"><button onclick="saveEditPlot()">💾 บันทึกการแก้ไข</button><button class="secondary" onclick="closeEditPlot()">ยกเลิก</button></div>
-</div></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
-</script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script>const U="https://zcyymemnbvodhayehkdn.supabase.co",K="sb_publishable_XVP0B8KvPBFyZtIi_K3z4A_cRTTmAGH",YEARS=[2568,2569,2570,2571,2572];const $=id=>document.getElementById(id);const appView=$('appView'),userArea=$('userArea'),year=$('year'),search=$('search'),plotList=$('plotList'),detail=$('detail'),detailTitle=$('detailTitle'),sTotal=$('sTotal'),sVisited=$('sVisited'),sAgri=$('sAgri'),sWait=$('sWait');let sb=null,plots=[],inspections=[],selected=null,map,markers=[];year.innerHTML=YEARS.map(y=>`<option value="${y}" ${y==2569?'selected':''}>ปีภาษี ${y}</option>`).join('');$('dashYear').innerHTML=YEARS.map(y=>`<option value="${y}" ${y==2569?'selected':''}>ปีภาษี ${y}</option>`).join('');$('dashYear').addEventListener('change',renderDashboard);async function loadScript(src, test){if(test())return;await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('โหลดไลบรารีไม่สำเร็จ: '+src));document.head.appendChild(s)})}
-async function initLibraries(){
-  if(!window.supabase) await loadScript('https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js',()=>!!window.supabase);
-  if(!window.L) await loadScript('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',()=>!!window.L);
-  if(!window.XLSX) await loadScript('https://unpkg.com/xlsx@0.20.3/dist/xlsx.full.min.js',()=>!!window.XLSX);
-  sb=window.supabase.createClient(U,K);
-}
-async function showApp(){
+</main>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+"use strict";
+const SUPABASE_URL="https://zcyymemnbvodhayehkdn.supabase.co";
+const SUPABASE_KEY="sb_publishable_XVP0B8KvPBFyZtIi_K3z4A_cRTTmAGH";
+const YEARS=[2568,2569,2570,2571,2572];
+const $=id=>document.getElementById(id);
+let db, map, plots=[], inspections=[], selected=null, markers=[];
+
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function status(i){if(!i||!i.visited)return ["wait","ยังไม่ได้ลงพื้นที่"];return i.is_agricultural===true?["ok","ตรวจแล้ว • ยังเป็นเกษตร"]:["no","ตรวจแล้ว • ไม่เป็นเกษตร"];}
+function inspectionFor(plotId){return inspections.find(x=>x.plot_id===plotId);}
+function showMsg(text,type="error"){ $("message").innerHTML='<div class="'+type+'">'+esc(text)+'</div>';setTimeout(()=>{if($("message").textContent===text)$("message").innerHTML=""},5000);}
+
+async function init(){
   try{
-    await initLibraries();
-    if(!map){
-      map=L.map('map',{zoomControl:true}).setView([13.6748,100.687],14);
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'}).addTo(map);
-    }
+    if(!window.supabase)throw new Error("ไม่สามารถโหลด Supabase ได้");
+    if(!window.L)throw new Error("ไม่สามารถโหลดแผนที่ได้");
+    db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    map=L.map("map").setView([13.6748,100.687],14);
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Tiles © Esri"}).addTo(map);
+    $("year").innerHTML=YEARS.map(y=>'<option value="'+y+'" '+(y===2569?"selected":"")+'>ปีภาษี '+y+"</option>").join("");
+    $("year").addEventListener("change",loadInspections);
+    $("search").addEventListener("input",renderList);
+    $("reload").addEventListener("click",loadAll);
     await loadAll();
-    setTimeout(()=>map&&map.invalidateSize(),200);
-  }catch(e){
-    detail.innerHTML='<div class="error">เปิดระบบไม่สำเร็จ: '+esc(e.message||e)+'</div>';
-    console.error(e);
+  }catch(e){showMsg("เปิดระบบไม่สำเร็จ: "+e.message);}
+}
+async function loadAll(){
+  $("detail").innerHTML='<div class="muted">กำลังโหลดข้อมูล...</div>';
+  const {data,error}=await db.from("plots").select("*").order("plot_code");
+  if(error){showMsg(error.message);return;}
+  plots=data||[];
+  await loadInspections();
+}
+async function loadInspections(){
+  const y=Number($("year").value);
+  const {data,error}=await db.from("inspections").select("*").eq("tax_year",y);
+  if(error){showMsg(error.message);return;}
+  inspections=data||[];
+  render();
+  if(selected)await openPlot(selected.id);
+}
+function render(){
+  renderMap();renderList();renderStats();
+}
+function renderMap(){
+  markers.forEach(m=>m.remove());markers=[];
+  const bounds=[];
+  for(const p of plots){
+    if(p.latitude==null||p.longitude==null)continue;
+    const i=inspectionFor(p.id),s=status(i),color=s[0]==="ok"?"#176b43":s[0]==="no"?"#a83d3d":"#d49a19";
+    const m=L.circleMarker([p.latitude,p.longitude],{radius:9,color,fillColor:color,fillOpacity:.85});
+    m.bindPopup("<b>"+esc(p.plot_code)+"</b><br>"+esc(s[1]));
+    m.on("click",()=>openPlot(p.id));m.addTo(map);markers.push(m);bounds.push([p.latitude,p.longitude]);
   }
+  if(bounds.length)map.fitBounds(bounds,{padding:[25,25]});
 }
-setTimeout(()=>showApp(),50);
-async function loadAll(){const{data,error}=await sb.from('plots').select('*').order('plot_code');if(error)return detail.innerHTML=`<div class="error">${esc(error.message)}</div>`;plots=data||[];await refreshYear()}async function refreshYear(){const y=+year.value;const{data,error}=await sb.from('inspections').select('*').eq('tax_year',y);if(error)return;inspections=data||[];renderMap();renderPlotList();renderStats();if(selected)openPlot(selected.id)}function openImport(){ $('importFile').click() }
-function normHeader(v){return String(v??'').trim().toLowerCase().replace(/\\s+/g,'')}
-function pick(row,names){for(const n of names){const k=Object.keys(row).find(x=>normHeader(x)===normHeader(n));if(k!==undefined&&String(row[k]).trim()!=='')return row[k]}return ''}
-function num(v){if(v===''||v==null)return null;const n=Number(String(v).replace(/,/g,''));return Number.isFinite(n)?n:null}
-async function importExcel(file){
-  if(!file)return;
-  const msg=document.createElement('div');msg.className='success';msg.textContent='กำลังอ่านไฟล์ '+file.name+' ...';document.querySelector('.toolbar').insertAdjacentElement('afterend',msg);
-  try{
-    const buf=await file.arrayBuffer(),wb=XLSX.read(buf,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0}],rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-    if(!rows.length)throw new Error('ไม่พบข้อมูลในไฟล์');
-    let added=0,skipped=0,failed=[];
-    const existing=new Set(plots.map(p=>String(p.plot_code).trim().toLowerCase()));
-    for(const r of rows){
-      const code=String(pick(r,['รหัสแปลง','plot_code','plot code','รหัส'])||'').trim();
-      const lat=num(pick(r,['ละติจูด','latitude','lat'])),lon=num(pick(r,['ลองจิจูด','longitude','lon','lng']));
-      if(!code||lat===null||lon===null){failed.push(code||'(ไม่มีรหัส)');continue}
-      if(existing.has(code.toLowerCase())){skipped++;continue}
-      const payload={
-        plot_code:code,latitude:lat,longitude:lon,
-        area_rai:num(pick(r,['ไร่','area_rai','rai']))??0,
-        area_ngan:num(pick(r,['งาน','area_ngan','ngan']))??0,
-        area_wah:num(pick(r,['ตารางวา','ตร.ว.','area_wah','wah']))??0,
-        subdistrict:String(pick(r,['แขวง','ตำบล','subdistrict'])||'').trim()||null,
-        district:String(pick(r,['เขต','อำเภอ','district'])||'').trim()||null,
-        land_use:String(pick(r,['การใช้ประโยชน์ที่ดิน','land_use','land use'])||'').trim()||null,
-        crop:String(pick(r,['ชนิดพืช','crop'])||'').trim()||null,
-        title_deed_no:String(pick(r,['เลขเอกสารสิทธิ์','เลขที่โฉนด','เลขโฉนด','title_deed_no','title deed'])||'').trim()||null
-      };
-      const {error}=await sb.from('plots').insert(payload);
-      if(error){failed.push(code+': '+error.message);continue}
-      existing.add(code.toLowerCase());added++;
-    }
-    msg.className=failed.length?'error':'success';
-    msg.innerHTML='นำเข้าเสร็จแล้ว: เพิ่ม '+added+' แปลง, ข้ามรหัสที่มีอยู่แล้ว '+skipped+' แปลง'+(failed.length?' และมีรายการผิดพลาด '+failed.length+' รายการ':'')+'.';
-    if(failed.length)msg.innerHTML+='<br><span class="muted">'+esc(failed.slice(0,8).join(' | '))+(failed.length>8?' ...':'')+'</span>';
-    await loadAll();
-  }catch(e){msg.className='error';msg.textContent='นำเข้าไม่สำเร็จ: '+e.message}
-  $('importFile').value='';
+function renderList(){
+  const q=$("search").value.trim().toLowerCase();
+  const rows=plots.filter(p=>(String(p.plot_code)+" "+String(p.title_deed_no||"")).toLowerCase().includes(q));
+  $("plotList").innerHTML='<table><tr><th>แปลง</th><th>เอกสารสิทธิ์</th><th>สถานะปี '+$("year").value+'</th></tr>'+
+    rows.map(p=>{const s=status(inspectionFor(p.id));return '<tr data-id="'+p.id+'" style="cursor:pointer"><td><b>'+esc(p.plot_code)+'</b></td><td>'+esc(p.title_deed_no||"-")+'</td><td><span class="badge '+s[0]+'">'+s[1]+'</span></td></tr>';}).join("")+
+    "</table>";
+  $("plotList").querySelectorAll("tr[data-id]").forEach(r=>r.addEventListener("click",()=>openPlot(r.dataset.id)));
 }
-function exportExcel(){
-  if(!plots.length){alert('ยังไม่มีข้อมูลแปลงให้ส่งออก');return}
-  const rows=plots.map(p=>({
-    'รหัสแปลง':p.plot_code,'เลขเอกสารสิทธิ์':p.title_deed_no||'','ละติจูด':p.latitude,'ลองจิจูด':p.longitude,
-    'ไร่':p.area_rai??0,'งาน':p.area_ngan??0,'ตารางวา':p.area_wah??0,'แขวง':p.subdistrict||'','เขต':p.district||'',
-    'การใช้ประโยชน์ที่ดิน':p.land_use||'','ชนิดพืช':p.crop||''
-  }));
-  const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'แปลงเกษตร');
-  XLSX.writeFile(wb,'ข้อมูลแปลงเกษตร_เขตประเวศ.xlsx');
+function renderStats(){
+  const v=inspections.filter(i=>i.visited).length;
+  const a=inspections.filter(i=>i.visited&&i.is_agricultural===true).length;
+  $("total").textContent=plots.length;$("visited").textContent=v;$("agri").textContent=a;$("waiting").textContent=Math.max(0,plots.length-v);
 }
-function openEditPlot(){if(!selected)return;const p=selected;
-  $('editPlotMsg').innerHTML='';
-  $('editPlotCode').value=p.plot_code||'';$('editTitleDeed').value=p.title_deed_no||'';
-  $('editLat').value=p.latitude??'';$('editLon').value=p.longitude??'';
-  $('editRai').value=p.area_rai??0;$('editNgan').value=p.area_ngan??0;$('editWah').value=p.area_wah??0;
-  $('editSubdistrict').value=p.subdistrict||'';$('editDistrict').value=p.district||'';
-  $('editLandUse').value=p.land_use||'';$('editCrop').value=p.crop||'';
-  $('editPlotModal').classList.remove('hidden');
+async function openPlot(id){
+  selected=plots.find(p=>p.id===id);if(!selected)return;
+  const y=Number($("year").value);
+  const current=inspectionFor(id)||{plot_id:id,tax_year:y,visited:false,is_agricultural:null,inspection_date:"",inspector_name:"",notes:""};
+  const {data:history,error}=await db.from("inspections").select("*").eq("plot_id",id).order("tax_year",{ascending:false});
+  if(error){showMsg(error.message);return;}
+  const s=status(current);
+  $("title").textContent="แปลง "+selected.plot_code+" • ปีภาษี "+y;
+  $("detail").innerHTML=
+    '<div class="success"><span class="badge '+s[0]+'">'+s[1]+'</span></div>'+
+    '<div class="row"><div><label>รหัสแปลง</label><input value="'+esc(selected.plot_code)+'" disabled></div><div><label>เลขเอกสารสิทธิ์</label><input value="'+esc(selected.title_deed_no||"")+'" disabled></div></div>'+
+    '<div class="row"><div><label>พิกัด</label><input value="'+selected.latitude+', '+selected.longitude+'" disabled></div><div><label>เนื้อที่</label><input value="'+(selected.area_rai||0)+"-"+(selected.area_ngan||0)+"-"+(selected.area_wah||0)+'" disabled></div></div>'+
+    '<label>ลงพื้นที่ตรวจแล้วหรือยัง</label><select id="fVisited"><option value="false" '+(!current.visited?"selected":"")+'>ยังไม่ได้ลงพื้นที่</option><option value="true" '+(current.visited?"selected":"")+'>ลงพื้นที่แล้ว</option></select>'+
+    '<label>สถานะการเกษตร</label><select id="fAgri"><option value="" '+(current.is_agricultural==null?"selected":"")+'>ยังไม่ระบุ</option><option value="true" '+(current.is_agricultural===true?"selected":"")+'>ยังเป็นเกษตร</option><option value="false" '+(current.is_agricultural===false?"selected":"")+'>ไม่เป็นเกษตร</option></select>'+
+    '<div class="row"><div><label>วันที่ตรวจ</label><input id="fDate" type="date" value="'+esc(current.inspection_date||"")+'"></div><div><label>ผู้ตรวจ</label><input id="fInspector" value="'+esc(current.inspector_name||"")+'"></div></div>'+
+    '<label>หมายเหตุ</label><textarea id="fNotes">'+esc(current.notes||"")+'</textarea>'+
+    '<label>รูปถ่ายปี '+y+'</label><input id="fPhotos" type="file" accept="image/*" multiple><div id="photos" class="photos"></div>'+
+    '<div class="toolbar" style="margin-top:12px"><button id="save">💾 บันทึกข้อมูลปี '+y+'</button><button class="secondary" id="maps">📍 Google Maps</button></div>'+
+    '<hr><h4>ประวัติการตรวจย้อนหลัง</h4>'+
+    '<table><tr><th>ปี</th><th>สถานะ</th><th>วันที่</th><th>ผู้ตรวจ</th></tr>'+
+    (history||[]).map(h=>{const z=status(h);return "<tr><td>"+h.tax_year+"</td><td>"+z[1]+"</td><td>"+(h.inspection_date||"-")+"</td><td>"+esc(h.inspector_name||"-")+"</td></tr>";}).join("")+"</table>";
+  $("save").addEventListener("click",saveInspection);
+  $("maps").addEventListener("click",()=>window.open("https://www.google.com/maps?q="+selected.latitude+","+selected.longitude,"_blank"));
+  await loadPhotos(current.id);
 }
-function closeEditPlot(){$('editPlotModal').classList.add('hidden')}
-async function saveEditPlot(){
-  const code=$('editPlotCode').value.trim(),lat=parseFloat($('editLat').value),lon=parseFloat($('editLon').value);
-  if(!code||!Number.isFinite(lat)||!Number.isFinite(lon)){ $('editPlotMsg').innerHTML='<div class="error">กรุณากรอกรหัสแปลง ละติจูด และลองจิจูดให้ครบถ้วน</div>';return}
-  if(lat<-90||lat>90||lon<-180||lon>180){$('editPlotMsg').innerHTML='<div class="error">พิกัดไม่ถูกต้อง</div>';return}
-  const payload={
-    plot_code:code,latitude:lat,longitude:lon,
-    area_rai:Math.max(0,parseInt($('editRai').value||0,10)),area_ngan:Math.max(0,parseInt($('editNgan').value||0,10)),area_wah:Math.max(0,parseFloat($('editWah').value||0)),
-    subdistrict:$('editSubdistrict').value.trim()||null,district:$('editDistrict').value.trim()||null,land_use:$('editLandUse').value.trim()||null,crop:$('editCrop').value.trim()||null,title_deed_no:$('editTitleDeed').value.trim()||null,updated_at:new Date().toISOString()
-  };
-  const {data,error}=await sb.from('plots').update(payload).eq('id',selected.id).select().single();
-  if(error){$('editPlotMsg').innerHTML='<div class="error">'+esc(error.code==='23505'?'รหัสแปลงนี้มีอยู่แล้ว':error.message)+'</div>';return}
-  closeEditPlot();await loadAll();openPlot(data.id);
+async function loadPhotos(inspectionId){
+  const box=$("photos");if(!box)return;
+  if(!inspectionId){box.innerHTML='<span class="muted">ยังไม่มีการบันทึกของปีนี้</span>';return;}
+  const {data,error}=await db.from("inspection_photos").select("*").eq("inspection_id",inspectionId).order("uploaded_at");
+  if(error){box.innerHTML='<span class="error">'+esc(error.message)+"</span>";return;}
+  if(!data?.length){box.innerHTML='<span class="muted">ยังไม่มีรูป</span>';return;}
+  const items=[];
+  for(const p of data){const {data:u}=await db.storage.from("inspection-photos").createSignedUrl(p.storage_path,3600);if(u?.signedUrl)items.push('<a href="'+u.signedUrl+'" target="_blank"><img class="photo" src="'+u.signedUrl+'" alt="'+esc(p.file_name||"รูป")+'"></a>');}
+  box.innerHTML=items.join("")||'<span class="muted">ยังไม่มีรูปที่เปิดดูได้</span>';
 }
-function openAddPlot(){$('addPlotModal').classList.remove('hidden');$('addPlotMsg').innerHTML='';$('newPlotCode').focus()}
-function closeAddPlot(){$('addPlotModal').classList.add('hidden')}
-async function saveNewPlot(){
-  const code=$('newPlotCode').value.trim(),lat=parseFloat($('newLat').value),lon=parseFloat($('newLon').value);
-  if(!code||!Number.isFinite(lat)||!Number.isFinite(lon)){ $('addPlotMsg').innerHTML='<div class="error">กรุณากรอกรหัสแปลง ละติจูด และลองจิจูดให้ครบถ้วน</div>'; return }
-  if(lat<-90||lat>90||lon<-180||lon>180){ $('addPlotMsg').innerHTML='<div class="error">พิกัดไม่ถูกต้อง กรุณาตรวจสอบละติจูด/ลองจิจูด</div>'; return }
-  const payload={
-    plot_code:code,latitude:lat,longitude:lon,
-    area_rai:Math.max(0,parseInt($('newRai').value||0,10)),
-    area_ngan:Math.max(0,parseInt($('newNgan').value||0,10)),
-    area_wah:Math.max(0,parseFloat($('newWah').value||0)),
-    subdistrict:$('newSubdistrict').value.trim()||null,
-    district:$('newDistrict').value.trim()||null,
-    land_use:$('newLandUse').value.trim()||null,
-    crop:$('newCrop').value.trim()||null,
-    title_deed_no:$('newTitleDeed').value.trim()||null
-  };
-  const {data,error}=await sb.from('plots').insert(payload).select().single();
-  if(error){
-    const msg=error.code==='23505'?'รหัสแปลงนี้มีอยู่แล้ว กรุณาใช้รหัสแปลงอื่น':error.message;
-    $('addPlotMsg').innerHTML='<div class="error">'+esc(msg)+'</div>'; return;
+async function saveInspection(){
+  if(!selected)return;
+  const y=Number($("year").value),visited=$("fVisited").value==="true",a=$("fAgri").value;
+  const payload={plot_id:selected.id,tax_year:y,visited,is_agricultural:a===""?null:a==="true",inspection_date:$("fDate").value||null,inspector_name:$("fInspector").value.trim()||null,notes:$("fNotes").value.trim()||null,updated_at:new Date().toISOString()};
+  const {data,error}=await db.from("inspections").upsert(payload,{onConflict:"plot_id,tax_year"}).select().single();
+  if(error){showMsg("บันทึกไม่สำเร็จ: "+error.message);return;}
+  const files=[...($("fPhotos").files||[])];
+  for(const file of files){
+    const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+    const path=selected.plot_code+"/"+y+"/"+crypto.randomUUID()+"-"+safe;
+    const up=await db.storage.from("inspection-photos").upload(path,file);
+    if(up.error){showMsg("บันทึกรายการแล้ว แต่แนบรูปไม่สำเร็จ: "+up.error.message);continue;}
+    const pi=await db.from("inspection_photos").insert({inspection_id:data.id,storage_path:path,file_name:file.name});
+    if(pi.error){showMsg("บันทึกรายการแล้ว แต่บันทึกข้อมูลรูปไม่สำเร็จ: "+pi.error.message);}
   }
-  $('addPlotMsg').innerHTML='<div class="success">เพิ่มแปลง '+esc(data.plot_code)+' เรียบร้อยแล้ว</div>';
-  setTimeout(async()=>{closeAddPlot();await loadAll();openPlot(data.id)},500);
+  showMsg("บันทึกข้อมูลปี "+y+" เรียบร้อยแล้ว","success");
+  await loadInspections();
 }
-function statusText(i){return!i||!i.visited?'ยังไม่ได้ลงพื้นที่':i.is_agricultural?'ตรวจแล้ว • ยังเป็นเกษตร':'ตรวจแล้ว • ไม่เป็นเกษตร'}function badge(i){const c=!i||!i.visited?'wait':i.is_agricultural?'ok':'no';return`<span class="badge ${c}">${statusText(i)}</span>`}function renderMap(){markers.forEach(m=>m.remove());markers=[];const b=[];plots.forEach(p=>{if(p.latitude==null)return;const i=inspections.find(x=>x.plot_id===p.id),c=!i||!i.visited?'#d49a19':i.is_agricultural?'#176b43':'#a83d3d',m=L.circleMarker([p.latitude,p.longitude],{radius:9,color:c,fillColor:c,fillOpacity:.8});m.bindPopup(`<b>${p.plot_code}</b><br>${statusText(i)}`);m.on('click',()=>openPlot(p.id));m.addTo(map);markers.push(m);b.push([p.latitude,p.longitude])});if(b.length)map.fitBounds(b,{padding:[20,20]})}function renderPlotList(){const q=(search.value||'').toLowerCase(),list=plots.filter(p=>(p.plot_code+' '+(p.title_deed_no||'')).toLowerCase().includes(q));plotList.innerHTML=`<table><tr><th>แปลง</th><th>เอกสารสิทธิ์</th><th>สถานะ</th></tr>${list.map(p=>{const i=inspections.find(x=>x.plot_id===p.id);return`<tr onclick="openPlot('${p.id}')" style="cursor:pointer"><td><b>${p.plot_code}</b></td><td>${p.title_deed_no||'-'}</td><td>${badge(i)}</td></tr>`}).join('')}</table>`}function renderStats(){const v=inspections.filter(i=>i.visited).length,a=inspections.filter(i=>i.visited&&i.is_agricultural).length;sTotal.textContent=plots.length;sVisited.textContent=v;sAgri.textContent=a;sWait.textContent=plots.length-v}function areaText(p){return`${p.area_rai||0}-${p.area_ngan||0}-${p.area_wah||0}`}async function openPlot(id){selected=plots.find(p=>p.id===id);const y=+year.value;const[{data:i},{data:h}]=await Promise.all([sb.from('inspections').select('*').eq('plot_id',id).eq('tax_year',y).maybeSingle(),sb.from('inspections').select('*').eq('plot_id',id).order('tax_year',{ascending:false})]);const x=i||{plot_id:id,tax_year:y,visited:false,is_agricultural:null};detailTitle.textContent=`แปลง ${selected.plot_code} • ปีภาษี ${y}`;detail.innerHTML=`<div class="success">${badge(x)}</div><div class="row"><div><label>รหัสแปลง</label><input value="${selected.plot_code}" disabled></div><div><label>เลขเอกสารสิทธิ์</label><input value="${selected.title_deed_no||''}" disabled></div></div><div class="row"><div><label>เนื้อที่ (ไร่-งาน-ตร.ว.)</label><input value="${areaText(selected)}" disabled></div><div><label>การใช้ประโยชน์</label><input value="${selected.land_use||''}" disabled></div></div><label>ลงพื้นที่ตรวจแล้วหรือยัง</label><select id="visited"><option value="false" ${!x.visited?'selected':''}>ยังไม่ได้ลงพื้นที่</option><option value="true" ${x.visited?'selected':''}>ลงพื้นที่แล้ว</option></select><label>สถานะการเกษตร</label><select id="agri"><option value="" ${x.is_agricultural==null?'selected':''}>ยังไม่ระบุ</option><option value="true" ${x.is_agricultural===true?'selected':''}>ยังเป็นเกษตร</option><option value="false" ${x.is_agricultural===false?'selected':''}>ไม่เป็นเกษตร</option></select><div class="row"><div><label>วันที่ตรวจ</label><input id="date" type="date" value="${x.inspection_date||''}"></div><div><label>ผู้ตรวจ</label><input id="inspector" value="${esc(x.inspector_name||'')}"></div></div><label>หมายเหตุ</label><textarea id="notes">${esc(x.notes||'')}</textarea><label>แนบรูปถ่ายปี ${y}</label><input id="photos" type="file" accept="image/*" multiple><div id="photoList" class="photos"></div><div class="toolbar" style="margin-top:12px"><button onclick="saveInspection()">💾 บันทึกข้อมูลปี ${y}</button><button class="secondary" onclick="openEditPlot()">✏️ แก้ไขข้อมูลแปลง</button><button class="secondary" onclick="openMaps()">📍 Google Maps</button></div><hr><h4>ประวัติย้อนหลัง</h4><table><tr><th>ปี</th><th>สถานะ</th><th>วันที่</th><th>ผู้ตรวจ</th></tr>${(h||[]).map(z=>`<tr><td>${z.tax_year}</td><td>${statusText(z)}</td><td>${z.inspection_date||'-'}</td><td>${esc(z.inspector_name||'-')}</td></tr>`).join('')}</table>`;await loadPhotos(x.id)}async function loadPhotos(id){const box=$('photoList');if(!box)return;if(!id){box.innerHTML='<span class="muted">บันทึกผลตรวจก่อนจึงจะแนบรูปได้</span>';return}const{data,error}=await sb.from('inspection_photos').select('*').eq('inspection_id',id).order('uploaded_at');if(error){box.innerHTML='<span class="error">'+esc(error.message)+'</span>';return}box.innerHTML='';for(const p of(data||[])){const{data:u}=await sb.storage.from('inspection-photos').createSignedUrl(p.storage_path,3600);if(u?.signedUrl)box.innerHTML+=`<a href="${u.signedUrl}" target="_blank"><img class="photo" src="${u.signedUrl}" alt="${esc(p.file_name||'รูป')}"></a>`}if(!data?.length)box.innerHTML='<span class="muted">ยังไม่มีรูป</span>'}async function saveInspection(){if(!selected){detail.innerHTML='<div class="error">กรุณาเลือกแปลงก่อนบันทึก</div>';return}const y=+$('year').value,visitedValue=$('visited').value,ag=$('agri').value,payload={plot_id:selected.id,tax_year:y,visited:visitedValue==='true',is_agricultural:ag===''?null:ag==='true',inspection_date:$('date').value||null,inspector_name:$('inspector').value.trim()||null,notes:$('notes').value.trim()||null,updated_at:new Date().toISOString()};const{data,error}=await sb.from('inspections').upsert(payload,{onConflict:'plot_id,tax_year'}).select().single();if(error){detail.innerHTML='<div class="error">'+esc(error.message)+'</div>';return}const files=$('photos').files||[];for(const f of files){const safeName=f.name.replace(/[^a-zA-Z0-9._-]/g,'_');const path=`${selected.plot_code}/${y}/${crypto.randomUUID()}-${safeName}`;const upload=await sb.storage.from('inspection-photos').upload(path,f);if(upload.error){console.error(upload.error);continue}const photoInsert=await sb.from('inspection_photos').insert({inspection_id:data.id,storage_path:path,file_name:f.name});if(photoInsert.error)console.error(photoInsert.error)}alert('บันทึกข้อมูลเรียบร้อย');await refreshYear()}function openMaps(){if(!selected)return;window.open(`https://www.google.com/maps?q=${selected.latitude},${selected.longitude}`,'_blank')}function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}async function showDashboard(){appView.querySelector('#dashboardView').classList.remove('hidden');appView.querySelector('#mainView').classList.add('hidden');$('dashYear').value=year.value;await renderDashboard()}function showMain(){appView.querySelector('#dashboardView').classList.add('hidden');appView.querySelector('#mainView').classList.remove('hidden')}async function renderDashboard(){const y=+$('dashYear').value;let rows=[];if(sb){const{data,error}=await sb.from('inspections').select('*').eq('tax_year',y);if(error){$('dashNote').textContent='โหลดข้อมูลปีภาษีนี้ไม่สำเร็จ: '+error.message;return}rows=data||[];}const ag=rows.filter(i=>i.visited&&i.is_agricultural===true).length;const no=rows.filter(i=>i.visited&&i.is_agricultural===false).length;const wait=plots.length-rows.filter(i=>i.visited).length;const unknown=rows.filter(i=>i.visited&&i.is_agricultural==null).length;$('dAgri').textContent=ag;$('dNoAgri').textContent=no;$('dWait').textContent=wait;$('lAgri').textContent=ag;$('lNoAgri').textContent=no;$('lWait').textContent=wait;$('printYear').textContent='ปีภาษี '+y+' | วันที่พิมพ์ '+new Date().toLocaleDateString('th-TH');const total=ag+no+wait, a=total?ag/total*360:0,n=total?no/total*360:0;$('dashPie').style.background=total?'conic-gradient(#176b43 0deg '+a+'deg,#a83d3d '+a+'deg '+(a+n)+'deg,#d49a19 '+(a+n)+'deg 360deg)':'#e5ece8';$('dashNote').textContent=unknown?'หมายเหตุ: มี '+unknown+' แปลงที่ลงพื้นที่แล้วแต่ยังไม่ระบุสถานะการเกษตร ซึ่งไม่รวมใน 3 กลุ่มหลัก':''}async function printDashboard(){await renderDashboard();window.print()}</script></body></html>
+init();
+</script>
+</body>
+</html>
