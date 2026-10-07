@@ -34,11 +34,13 @@ jobs:
           npm init -y
           npm install --no-save --ignore-scripts @supabase/supabase-js@2.117.2
           cp node_modules/@supabase/supabase-js/dist/umd/supabase.js ./supabase.js
+          mkdir -p site
+          cp index.html supabase.js site/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: site
 
       - name: Deploy to GitHub Pages
         id: deployment
