@@ -90,7 +90,28 @@ async function directLogin(){
     msg.innerHTML='<div class="error">'+m.replace(/[<>&"]/g,s=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[s]))+'</div>';
   }
 }
-</script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script>const U="https://zcyymemnbvodhayehkdn.supabase.co",K="sb_publishable_XVP0B8KvPBFyZtIi_K3z4A_cRTTmAGH",sb=window.supabase?window.supabase.createClient(U,K):null,YEARS=[2568,2569,2570,2571,2572];const $=id=>document.getElementById(id);const appView=$('appView'),userArea=$('userArea'),year=$('year'),search=$('search'),plotList=$('plotList'),detail=$('detail'),detailTitle=$('detailTitle'),sTotal=$('sTotal'),sVisited=$('sVisited'),sAgri=$('sAgri'),sWait=$('sWait');let plots=[],inspections=[],selected=null,map,markers=[];year.innerHTML=YEARS.map(y=>`<option value="${y}" ${y==2569?'selected':''}>ปีภาษี ${y}</option>`).join('');$('dashYear').innerHTML=YEARS.map(y=>`<option value="${y}" ${y==2569?'selected':''}>ปีภาษี ${y}</option>`).join('');$('dashYear').addEventListener('change',renderDashboard);if(!sb){detail.innerHTML='<div class="error">ไม่สามารถเชื่อมต่อฐานข้อมูลได้</div>'}else{setTimeout(()=>showApp(),0)}async function showApp(){if(!map){map=L.map('map').setView([13.6748,100.687],14);L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'}).addTo(map)}await loadAll()}async function loadAll(){const{data,error}=await sb.from('plots').select('*').order('plot_code');if(error)return detail.innerHTML=`<div class="error">${esc(error.message)}</div>`;plots=data||[];await refreshYear()}async function refreshYear(){const y=+year.value;const{data,error}=await sb.from('inspections').select('*').eq('tax_year',y);if(error)return;inspections=data||[];renderMap();renderPlotList();renderStats();if(selected)openPlot(selected.id)}function openImport(){ $('importFile').click() }
+</script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script>const U="https://zcyymemnbvodhayehkdn.supabase.co",K="sb_publishable_XVP0B8KvPBFyZtIi_K3z4A_cRTTmAGH",YEARS=[2568,2569,2570,2571,2572];const $=id=>document.getElementById(id);const appView=$('appView'),userArea=$('userArea'),year=$('year'),search=$('search'),plotList=$('plotList'),detail=$('detail'),detailTitle=$('detailTitle'),sTotal=$('sTotal'),sVisited=$('sVisited'),sAgri=$('sAgri'),sWait=$('sWait');let sb=null,plots=[],inspections=[],selected=null,map,markers=[];year.innerHTML=YEARS.map(y=>`<option value="${y}" ${y==2569?'selected':''}>ปีภาษี ${y}</option>`).join('');$('dashYear').innerHTML=YEARS.map(y=>`<option value="${y}" ${y==2569?'selected':''}>ปีภาษี ${y}</option>`).join('');$('dashYear').addEventListener('change',renderDashboard);async function loadScript(src, test){if(test())return;await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('โหลดไลบรารีไม่สำเร็จ: '+src));document.head.appendChild(s)})}
+async function initLibraries(){
+  if(!window.supabase) await loadScript('https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js',()=>!!window.supabase);
+  if(!window.L) await loadScript('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',()=>!!window.L);
+  if(!window.XLSX) await loadScript('https://unpkg.com/xlsx@0.20.3/dist/xlsx.full.min.js',()=>!!window.XLSX);
+  sb=window.supabase.createClient(U,K);
+}
+async function showApp(){
+  try{
+    await initLibraries();
+    if(!map){
+      map=L.map('map',{zoomControl:true}).setView([13.6748,100.687],14);
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'}).addTo(map);
+    }
+    await loadAll();
+    setTimeout(()=>map&&map.invalidateSize(),200);
+  }catch(e){
+    detail.innerHTML='<div class="error">เปิดระบบไม่สำเร็จ: '+esc(e.message||e)+'</div>';
+    console.error(e);
+  }
+}
+setTimeout(()=>showApp(),50)async function loadAll(){const{data,error}=await sb.from('plots').select('*').order('plot_code');if(error)return detail.innerHTML=`<div class="error">${esc(error.message)}</div>`;plots=data||[];await refreshYear()}async function refreshYear(){const y=+year.value;const{data,error}=await sb.from('inspections').select('*').eq('tax_year',y);if(error)return;inspections=data||[];renderMap();renderPlotList();renderStats();if(selected)openPlot(selected.id)}function openImport(){ $('importFile').click() }
 function normHeader(v){return String(v??'').trim().toLowerCase().replace(/\\s+/g,'')}
 function pick(row,names){for(const n of names){const k=Object.keys(row).find(x=>normHeader(x)===normHeader(n));if(k!==undefined&&String(row[k]).trim()!=='')return row[k]}return ''}
 function num(v){if(v===''||v==null)return null;const n=Number(String(v).replace(/,/g,''));return Number.isFinite(n)?n:null}
