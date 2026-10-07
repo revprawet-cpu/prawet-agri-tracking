@@ -29,6 +29,12 @@ jobs:
         with:
           enablement: true
 
+      - name: Build local Supabase SDK
+        run: |
+          npm init -y
+          npm install --no-save --ignore-scripts @supabase/supabase-js@2.117.2
+          cp node_modules/@supabase/supabase-js/dist/umd/supabase.js ./supabase.js
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
