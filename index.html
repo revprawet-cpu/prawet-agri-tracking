@@ -35,7 +35,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 <label style="margin:0;display:flex;align-items:center;gap:6px">ปีภาษี
 <select id="year"></select></label>
 <input id="search" placeholder="ค้นหารหัสแปลง / เลขเอกสารสิทธิ์" style="max-width:280px">
-<button id="reload">↻ รีเฟรช</button>
+<button id="findPlot">🔎 ค้นหา</button><button id="reload">↻ รีเฟรช</button>
 </div>
 <div class="grid">
 <section class="card">
@@ -74,6 +74,8 @@ async function init(){
     $("year").innerHTML=YEARS.map(y=>'<option value="'+y+'" '+(y===2569?"selected":"")+'>ปีภาษี '+y+"</option>").join("");
     $("year").addEventListener("change",loadInspections);
     $("search").addEventListener("input",renderList);
+    $("search").addEventListener("keydown",e=>{if(e.key==="Enter")findPlot();});
+    $("findPlot").addEventListener("click",findPlot);
     $("reload").addEventListener("click",loadAll);
     await loadAll();
   }catch(e){showMsg("เปิดระบบไม่สำเร็จ: "+e.message);}
@@ -107,6 +109,20 @@ function renderMap(){
     m.on("click",()=>openPlot(p.id));m.addTo(map);markers.push(m);bounds.push([p.latitude,p.longitude]);
   }
   if(bounds.length)map.fitBounds(bounds,{padding:[25,25]});
+}
+function findPlot(){
+  const q=$("search").value.trim().toLowerCase();
+  if(!q){showMsg("กรุณาระบุรหัสแปลงหรือเลขเอกสารสิทธิ์");return;}
+  const rows=plots.filter(p=>(String(p.plot_code)+" "+String(p.title_deed_no||"")).toLowerCase().includes(q));
+  if(!rows.length){showMsg("ไม่พบแปลงที่ตรงกับคำค้น");return;}
+  const p=rows[0];
+  if(p.latitude!=null&&p.longitude!=null){
+    map.setView([p.latitude,p.longitude],17);
+    const m=markers.find(x=>x.getLatLng().lat===Number(p.latitude)&&x.getLatLng().lng===Number(p.longitude));
+    if(m)m.openPopup();
+  }
+  openPlot(p.id);
+  if(rows.length>1)showMsg("พบ "+rows.length+" แปลง แสดงแปลงแรกคือ "+p.plot_code+" สามารถเลือกแปลงอื่นจากรายการด้านล่าง","success");
 }
 function renderList(){
   const q=$("search").value.trim().toLowerCase();
