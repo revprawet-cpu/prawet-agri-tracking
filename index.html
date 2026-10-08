@@ -371,9 +371,6 @@ function renderReport(all,reportYear){
     return {s,total:ids.size,visited:rows.filter(i=>i.visited).length,agri:rows.filter(i=>i.visited&&i.is_agricultural===true).length,nonAgri:rows.filter(i=>i.visited&&i.is_agricultural===false).length};
   });
   $("reportContent").innerHTML=
-    '<div class="report-year-selector" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px">'+
-    '<label style="margin:0;font-weight:700">เลือกปี พ.ศ.</label>'+
-    '<select id="reportYear">'+years.map(y=>'<option value="'+y+'" '+(y===reportYear?"selected":"")+'>'+y+'</option>').join("")+'</select></div>'+
     '<div class="report-actions"><button class="secondary" id="printReport">🖨️ พิมพ์รายงานปี '+reportYear+' / PDF</button></div>'+
     '<div class="stats" style="margin-top:12px">'+
     '<div class="stat">แปลงทั้งหมด<b>'+total+'</b></div>'+
@@ -391,7 +388,6 @@ function renderReport(all,reportYear){
     '<table><tr><th>แขวง/ตำบล</th><th>แปลงทั้งหมด</th><th>ตรวจแล้ว</th><th>ยังเป็นเกษตร</th><th>ไม่เป็นเกษตร</th></tr>'+
     subRows.map(r=>'<tr><td>'+esc(r.s)+'</td><td>'+r.total+'</td><td>'+r.visited+'</td><td>'+r.agri+'</td><td>'+r.nonAgri+'</td></tr>').join("")+
     '</table><div class="help" style="margin-top:12px">รายงานนี้คำนวณจากข้อมูลในฐานข้อมูลกลาง ณ เวลาที่เปิดรายงาน และไม่แก้ไขข้อมูลเดิม</div>';
-  $("reportYear").addEventListener("change",e=>renderReport(all,Number(e.target.value)));
   $("printReport").addEventListener("click",printReport);
 }
 
