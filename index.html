@@ -18,7 +18,26 @@ button.secondary{background:#e8f0eb;color:#174c35}button.danger{background:#a83d
 table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;border-bottom:1px solid #e5ece8;text-align:left}
 .photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.photo{width:110px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #ddd}
 .muted{color:#60756a;font-size:13px}.error{background:#fff0f0;color:#9a2929;padding:10px;border-radius:8px;margin:8px 0}.success{background:#e9f8ef;color:#176b43;padding:10px;border-radius:8px;margin:8px 0}
-.hidden{display:none!important}@media(max-width:900px){.grid{grid-template-columns:1fr}#map{height:430px}.stats{grid-template-columns:1fr 1fr}.row{grid-template-columns:1fr}}
+.hidden{display:none!important}
+.report-chart-wrap{display:grid;grid-template-columns:280px 1fr;gap:22px;align-items:center;margin:16px 0;padding:16px;background:#f7faf8;border:1px solid #dce7e0;border-radius:12px}
+.report-pie{width:260px;height:260px;margin:auto}
+.report-legend{display:flex;flex-direction:column;gap:10px}
+.report-legend-item{display:flex;align-items:center;gap:9px;font-size:14px}
+.report-dot{width:13px;height:13px;border-radius:50%;display:inline-block}
+.report-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+@media print{
+  body>*{display:none!important}
+  body.print-report #reportModal{display:flex!important;position:static!important;background:#fff!important;padding:0!important}
+  body.print-report #reportModal .modalbox{max-width:none!important;width:100%!important;max-height:none!important;overflow:visible!important;padding:0!important;box-shadow:none!important;border:0!important}
+  body.print-report #reportModal .modalhead button,
+  body.print-report #reportModal .report-actions,
+  body.print-report #reportModal #reportYear,
+  body.print-report #reportModal .report-year-selector{display:none!important}
+  body.print-report #reportModal .modalhead{margin-bottom:12px}
+  body.print-report #reportModal .report-chart-wrap{break-inside:avoid}
+  body.print-report #reportModal table{font-size:11px}
+}
+@media(max-width:900px){.report-chart-wrap{grid-template-columns:1fr}.report-pie{width:220px;height:220px}.grid{grid-template-columns:1fr}#map{height:430px}.stats{grid-template-columns:1fr 1fr}.row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -306,6 +325,29 @@ async function openReport(){
   finally{btn.disabled=false;btn.textContent="📊 รายงานสรุป";}
 }
 
+function pieSvg(values){
+  const total=values.reduce((a,b)=>a+b.value,0);
+  const cx=130,cy=130,r=92;
+  if(!total)return '<svg class="report-pie" viewBox="0 0 260 260"><circle cx="130" cy="130" r="92" fill="#e5ece8"></circle><text x="130" y="125" text-anchor="middle" font-size="16" fill="#52695d">ไม่มีข้อมูล</text><text x="130" y="148" text-anchor="middle" font-size="13" fill="#52695d">ปีนี้</text></svg>';
+  let angle=-Math.PI/2,paths="";
+  values.forEach(v=>{
+    if(v.value<=0)return;
+    const a=v.value/total*Math.PI*2;
+    const x1=cx+r*Math.cos(angle),y1=cy+r*Math.sin(angle);
+    const end=angle+a,x2=cx+r*Math.cos(end),y2=cy+r*Math.sin(end);
+    const large=a>Math.PI?1:0;
+    paths+='<path d="M '+cx+' '+cy+' L '+x1+' '+y1+' A '+r+' '+r+' 0 '+large+' 1 '+x2+' '+y2+' Z" fill="'+v.color+'" stroke="#fff" stroke-width="2"></path>';
+    angle=end;
+  });
+  return '<svg class="report-pie" viewBox="0 0 260 260" role="img" aria-label="กราฟวงกลมสรุปปี '+values.year+'">'+paths+'<circle cx="130" cy="130" r="48" fill="#fff"></circle><text x="130" y="126" text-anchor="middle" font-size="22" font-weight="700" fill="#173b2a">'+total+'</text><text x="130" y="148" text-anchor="middle" font-size="12" fill="#52695d">แปลง</text></svg>';
+}
+
+function printReport(){
+  document.body.classList.add("print-report");
+  window.addEventListener("afterprint",()=>document.body.classList.remove("print-report"),{once:true});
+  setTimeout(()=>window.print(),100);
+}
+
 function renderReport(all,reportYear){
   const years=[...new Set([...YEARS,...all.map(x=>x.tax_year)])].sort((a,b)=>a-b);
   const total=plots.length;
@@ -317,6 +359,11 @@ function renderReport(all,reportYear){
     return {y,visited,agri,nonAgri,waiting:Math.max(0,total-visited)};
   });
   const selectedYear=byYear.find(r=>r.y===reportYear)||{y:reportYear,visited:0,agri:0,nonAgri:0,waiting:total};
+  const pieData=[
+    {label:"ยังเป็นเกษตร",value:selectedYear.agri,color:"#176b43"},
+    {label:"ไม่เป็นเกษตร",value:selectedYear.nonAgri,color:"#a83d3d"},
+    {label:"รอตรวจ",value:selectedYear.waiting,color:"#d49a19"}
+  ];
   const subs=[...new Set(plots.map(p=>p.subdistrict||"ไม่ระบุ"))].sort((a,b)=>a.localeCompare(b,"th"));
   const subRows=subs.map(s=>{
     const ids=new Set(plots.filter(p=>(p.subdistrict||"ไม่ระบุ")===s).map(p=>p.id));
@@ -324,14 +371,20 @@ function renderReport(all,reportYear){
     return {s,total:ids.size,visited:rows.filter(i=>i.visited).length,agri:rows.filter(i=>i.visited&&i.is_agricultural===true).length,nonAgri:rows.filter(i=>i.visited&&i.is_agricultural===false).length};
   });
   $("reportContent").innerHTML=
-    '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px">'+
+    '<div class="report-year-selector" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px">'+
     '<label style="margin:0;font-weight:700">เลือกปี พ.ศ.</label>'+
     '<select id="reportYear">'+years.map(y=>'<option value="'+y+'" '+(y===reportYear?"selected":"")+'>'+y+'</option>').join("")+'</select></div>'+
+    '<div class="report-actions"><button class="secondary" id="printReport">🖨️ พิมพ์รายงานปี '+reportYear+' / PDF</button></div>'+
     '<div class="stats" style="margin-top:12px">'+
     '<div class="stat">แปลงทั้งหมด<b>'+total+'</b></div>'+
     '<div class="stat">ตรวจแล้ว ปี '+selectedYear.y+'<b>'+selectedYear.visited+'</b></div>'+
     '<div class="stat">ยังเป็นเกษตร ปี '+selectedYear.y+'<b>'+selectedYear.agri+'</b></div>'+
     '<div class="stat">รอตรวจ ปี '+selectedYear.y+'<b>'+selectedYear.waiting+'</b></div></div>'+
+    '<div class="report-chart-wrap"><div>'+
+    pieSvg(pieData.map(x=>({...x,year:reportYear})))+
+    '</div><div><h4 style="margin-top:0">📈 สรุปผลปี '+reportYear+'</h4>'+
+    '<div class="report-legend">'+pieData.map(x=>'<div class="report-legend-item"><span class="report-dot" style="background:'+x.color+'"></span><span>'+x.label+' <b>'+x.value+' แปลง</b></span></div>').join("")+
+    '</div><div class="help" style="margin-top:14px">กราฟแสดงสัดส่วนแปลงทั้งหมดของปีที่เลือก โดยแบ่งเป็น ยังเป็นเกษตร / ไม่เป็นเกษตร / รอตรวจ</div></div></div>'+
     '<h4>สรุปแยกตามปีภาษี</h4><table><tr><th>ปีภาษี</th><th>ตรวจแล้ว</th><th>ยังเป็นเกษตร</th><th>ไม่เป็นเกษตร</th><th>รอตรวจ</th></tr>'+
     byYear.map(r=>'<tr><td>'+r.y+'</td><td>'+r.visited+'</td><td>'+r.agri+'</td><td>'+r.nonAgri+'</td><td>'+r.waiting+'</td></tr>').join("")+
     '</table><h4 style="margin-top:18px">สรุปตามแขวง/ตำบล • ปี '+reportYear+'</h4>'+
@@ -339,6 +392,7 @@ function renderReport(all,reportYear){
     subRows.map(r=>'<tr><td>'+esc(r.s)+'</td><td>'+r.total+'</td><td>'+r.visited+'</td><td>'+r.agri+'</td><td>'+r.nonAgri+'</td></tr>').join("")+
     '</table><div class="help" style="margin-top:12px">รายงานนี้คำนวณจากข้อมูลในฐานข้อมูลกลาง ณ เวลาที่เปิดรายงาน และไม่แก้ไขข้อมูลเดิม</div>';
   $("reportYear").addEventListener("change",e=>renderReport(all,Number(e.target.value)));
+  $("printReport").addEventListener("click",printReport);
 }
 
 function findPlot(){
