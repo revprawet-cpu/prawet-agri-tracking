@@ -25,13 +25,13 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 .report-legend-item{display:flex;align-items:center;gap:9px;font-size:14px}
 .report-dot{width:13px;height:13px;border-radius:50%;display:inline-block}
 .report-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
-.plot-pie-panel{position:absolute;top:0;right:0;width:250px;background:#f7faf8;border:1px solid #dce7e0;border-radius:12px;padding:12px;text-align:center}
+.plot-pie-panel{float:right;width:250px;box-sizing:border-box;background:#f7faf8;border:1px solid #dce7e0;border-radius:12px;padding:12px;margin:0 0 16px 18px;text-align:center;display:block;visibility:visible;z-index:2}
 .plot-pie-panel h4{margin:0 0 4px;font-size:15px}
-.plot-pie-panel .report-pie{width:210px;height:210px}
+.plot-pie-panel .report-pie{width:210px;height:210px;display:block;margin:6px auto}
 .plot-pie-legend{display:flex;flex-direction:column;gap:5px;text-align:left;font-size:12px;margin-top:4px}
 .plot-pie-legend-item{display:flex;align-items:center;gap:7px}
-#detail{position:relative;padding-right:270px}
-@media(max-width:1100px){#detail{padding-right:0}.plot-pie-panel{position:relative;top:auto;right:auto;width:100%;margin:14px 0}.plot-pie-panel .report-pie{width:220px;height:220px}}
+#detail{position:relative;overflow:auto}
+@media(max-width:1100px){.plot-pie-panel{float:none;width:100%;margin:14px 0}.plot-pie-panel .report-pie{width:220px;height:220px}}
 @media print{
   body>*{display:none!important}
   body.print-report #reportModal{display:flex!important;position:static!important;background:#fff!important;padding:0!important}
