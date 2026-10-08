@@ -159,6 +159,7 @@ async function openPlot(id){
     '<table><tr><th>ปี</th><th>สถานะ</th><th>วันที่</th><th>ผู้ตรวจ</th></tr>'+
     (history||[]).map(h=>{const z=status(h);return "<tr><td>"+h.tax_year+"</td><td>"+z[1]+"</td><td>"+(h.inspection_date||"-")+"</td><td>"+esc(h.inspector_name||"-")+"</td></tr>";}).join("")+"</table>";
   $("save").addEventListener("click",saveInspection);
+  $("editPlot").addEventListener("click",()=>showPlotEditor(selected));
   $("maps").addEventListener("click",()=>window.open("https://www.google.com/maps?q="+selected.latitude+","+selected.longitude,"_blank"));
   await loadPhotos(current.id);
 }
