@@ -25,6 +25,13 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 .report-legend-item{display:flex;align-items:center;gap:9px;font-size:14px}
 .report-dot{width:13px;height:13px;border-radius:50%;display:inline-block}
 .report-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.plot-pie-panel{position:absolute;top:0;right:0;width:250px;background:#f7faf8;border:1px solid #dce7e0;border-radius:12px;padding:12px;text-align:center}
+.plot-pie-panel h4{margin:0 0 4px;font-size:15px}
+.plot-pie-panel .report-pie{width:210px;height:210px}
+.plot-pie-legend{display:flex;flex-direction:column;gap:5px;text-align:left;font-size:12px;margin-top:4px}
+.plot-pie-legend-item{display:flex;align-items:center;gap:7px}
+#detail{position:relative;padding-right:270px}
+@media(max-width:1100px){#detail{padding-right:0}.plot-pie-panel{position:relative;top:auto;right:auto;width:100%;margin:14px 0}.plot-pie-panel .report-pie{width:220px;height:220px}}
 @media print{
   body>*{display:none!important}
   body.print-report #reportModal{display:flex!important;position:static!important;background:#fff!important;padding:0!important}
@@ -418,7 +425,24 @@ function renderStats(){
   const a=inspections.filter(i=>i.visited&&i.is_agricultural===true).length;
   $("total").textContent=plots.length;$("visited").textContent=v;$("agri").textContent=a;$("waiting").textContent=Math.max(0,plots.length-v);
 }
-async function openPlot(id){
+async function detailPieHtml(y){
+  const total=plots.length;
+  const visited=inspections.filter(i=>i.visited).length;
+  const agri=inspections.filter(i=>i.visited&&i.is_agricultural===true).length;
+  const nonAgri=inspections.filter(i=>i.visited&&i.is_agricultural===false).length;
+  const waiting=Math.max(0,total-visited);
+  const values=[
+    {label:"ยังเป็นเกษตร",value:agri,color:"#176b43"},
+    {label:"ไม่เป็นเกษตร",value:nonAgri,color:"#a83d3d"},
+    {label:"รอตรวจ",value:waiting,color:"#d49a19"}
+  ];
+  const svg=pieSvg(values.map(x=>({...x,year:y}))).replace("class=\"report-pie\"","class=\"report-pie\"");
+  return '<div class="plot-pie-panel"><h4>📊 สรุปสถานะแปลง</h4><div class="muted">ปีภาษี '+y+'</div>'+svg+
+    '<div class="plot-pie-legend">'+values.map(x=>'<div class="plot-pie-legend-item"><span class="report-dot" style="background:'+x.color+'"></span><span>'+x.label+' <b>'+x.value+'</b></span></div>').join("")+
+    '</div></div>';
+}
+
+function openPlot(id){
   selected=plots.find(p=>p.id===id);if(!selected)return;
   const y=Number($("year").value);
   const current=inspectionFor(id)||{plot_id:id,tax_year:y,visited:false,is_agricultural:null,inspection_date:"",inspector_name:"",notes:""};
@@ -427,6 +451,7 @@ async function openPlot(id){
   const s=status(current);
   $("title").textContent="แปลง "+selected.plot_code+" • ปีภาษี "+y;
   $("detail").innerHTML=
+    detailPieHtml(y)+
     '<div class="success"><span class="badge '+s[0]+'">'+s[1]+'</span></div>'+
     '<div class="row"><div><label>รหัสแปลง</label><input value="'+esc(selected.plot_code)+'" disabled></div><div><label>เลขเอกสารสิทธิ์</label><input value="'+esc(selected.title_deed_no||"")+'" disabled></div></div>'+
     '<div class="row"><div><label>พิกัด</label><input value="'+selected.latitude+', '+selected.longitude+'" disabled></div><div><label>เนื้อที่</label><input value="'+(selected.area_rai||0)+"-"+(selected.area_ngan||0)+"-"+(selected.area_wah||0)+'" disabled></div></div>'+
