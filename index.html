@@ -149,8 +149,9 @@ async function openPlot(id){
     '<div class="success"><span class="badge '+s[0]+'">'+s[1]+'</span></div>'+
     '<div class="row"><div><label>รหัสแปลง</label><input value="'+esc(selected.plot_code)+'" disabled></div><div><label>เลขเอกสารสิทธิ์</label><input value="'+esc(selected.title_deed_no||"")+'" disabled></div></div>'+
     '<div class="row"><div><label>พิกัด</label><input value="'+selected.latitude+', '+selected.longitude+'" disabled></div><div><label>เนื้อที่</label><input value="'+(selected.area_rai||0)+"-"+(selected.area_ngan||0)+"-"+(selected.area_wah||0)+'" disabled></div></div>'+
-    '<div class="row"><div><label>แขวง/ตำบล</label><input value="'+esc(selected.subdistrict||"")+'" disabled></div><div><label>เขต</label><input value="'+esc(selected.district||"")+'" disabled></div></div>'+
-    '<div class="row"><div><label>การใช้ประโยชน์ที่ดิน</label><input value="'+esc(selected.land_use||"")+'" disabled></div><div><label>ชนิดพืช</label><input value="'+esc(selected.crop||"")+'" disabled></div></div>'+
+    '<div class="row"><div><label>แขวง/ตำบล</label><input id="pSub" value="'+esc(selected.subdistrict||"")+'"></div><div><label>เขต</label><input id="pDistrict" value="'+esc(selected.district||"")+'"></div></div>'+
+    '<div class="row"><div><label>การใช้ประโยชน์ที่ดิน</label><input id="pLand" value="'+esc(selected.land_use||"")+'"></div><div><label>ชนิดพืช</label><input id="pCrop" value="'+esc(selected.crop||"")+'"></div></div>'+
+    '<div class="toolbar" style="margin-top:10px"><button id="savePlotDetails">💾 บันทึกข้อมูลแปลง</button></div>'+
     '<label>ลงพื้นที่ตรวจแล้วหรือยัง</label><select id="fVisited"><option value="false" '+(!current.visited?"selected":"")+'>ยังไม่ได้ลงพื้นที่</option><option value="true" '+(current.visited?"selected":"")+'>ลงพื้นที่แล้ว</option></select>'+
     '<label>สถานะการเกษตร</label><select id="fAgri"><option value="" '+(current.is_agricultural==null?"selected":"")+'>ยังไม่ระบุ</option><option value="true" '+(current.is_agricultural===true?"selected":"")+'>ยังเป็นเกษตร</option><option value="false" '+(current.is_agricultural===false?"selected":"")+'>ไม่เป็นเกษตร</option></select>'+
     '<div class="row"><div><label>วันที่ตรวจ</label><input id="fDate" type="date" value="'+esc(current.inspection_date||"")+'"></div><div><label>ผู้ตรวจ</label><input id="fInspector" value="'+esc(current.inspector_name||"")+'"></div></div>'+
@@ -161,6 +162,7 @@ async function openPlot(id){
     '<table><tr><th>ปี</th><th>สถานะ</th><th>วันที่</th><th>ผู้ตรวจ</th></tr>'+
     (history||[]).map(h=>{const z=status(h);return "<tr><td>"+h.tax_year+"</td><td>"+z[1]+"</td><td>"+(h.inspection_date||"-")+"</td><td>"+esc(h.inspector_name||"-")+"</td></tr>";}).join("")+"</table>";
   $("save").addEventListener("click",saveInspection);
+  $("savePlotDetails").addEventListener("click",savePlotDetails);
   $("maps").addEventListener("click",()=>window.open("https://www.google.com/maps?q="+selected.latitude+","+selected.longitude,"_blank"));
   await loadPhotos(current.id);
 }
@@ -188,6 +190,25 @@ async function savePlot(){
   if(error){showMsg("บันทึกข้อมูลแปลงไม่สำเร็จ: "+error.message);return;}
   const idx=plots.findIndex(x=>x.id===selected.id);if(idx>=0)plots[idx]=data;selected=data;
   showMsg("บันทึกข้อมูลแปลงเรียบร้อยแล้ว","success");render();await openPlot(data.id);
+}
+
+async function savePlotDetails(){
+  if(!selected)return;
+  const payload={
+    subdistrict:$("pSub").value.trim()||null,
+    district:$("pDistrict").value.trim()||null,
+    land_use:$("pLand").value.trim()||null,
+    crop:$("pCrop").value.trim()||null,
+    updated_at:new Date().toISOString()
+  };
+  const {data,error}=await db.from("plots").update(payload).eq("id",selected.id).select().single();
+  if(error){showMsg("บันทึกข้อมูลแปลงไม่สำเร็จ: "+error.message);return;}
+  const idx=plots.findIndex(x=>x.id===selected.id);
+  if(idx>=0)plots[idx]=data;
+  selected=data;
+  showMsg("บันทึกข้อมูลแปลงเรียบร้อยแล้ว","success");
+  render();
+  await openPlot(data.id);
 }
 
 async function loadPhotos(inspectionId){
