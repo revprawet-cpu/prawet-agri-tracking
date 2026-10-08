@@ -300,37 +300,45 @@ async function openReport(){
   try{
     const {data:all,error}=await db.from("inspections").select("*").order("tax_year",{ascending:true});
     if(error)throw error;
-    const years=[...new Set([...YEARS,...(all||[]).map(x=>x.tax_year)])].sort((a,b)=>a-b);
-    const total=plots.length;
-    const byYear=years.map(y=>{
-      const rows=(all||[]).filter(x=>x.tax_year===y);
-      const visited=rows.filter(x=>x.visited).length;
-      const agri=rows.filter(x=>x.visited&&x.is_agricultural===true).length;
-      const nonAgri=rows.filter(x=>x.visited&&x.is_agricultural===false).length;
-      return {y,visited,agri,nonAgri,waiting:Math.max(0,total-visited)};
-    });
-    const subs=[...new Set(plots.map(p=>p.subdistrict||"ไม่ระบุ"))].sort((a,b)=>a.localeCompare(b,"th"));
-    const subRows=subs.map(s=>{
-      const ids=new Set(plots.filter(p=>(p.subdistrict||"ไม่ระบุ")===s).map(p=>p.id));
-      const rows=(all||[]).filter(i=>i.tax_year===Number($("year").value)&&ids.has(i.plot_id));
-      return {s,total:ids.size,visited:rows.filter(i=>i.visited).length,agri:rows.filter(i=>i.visited&&i.is_agricultural===true).length,nonAgri:rows.filter(i=>i.visited&&i.is_agricultural===false).length};
-    });
-    const latest=byYear[byYear.length-1]||{y:$("year").value,visited:0,agri:0,nonAgri:0,waiting:total};
-    $("reportContent").innerHTML=
-      '<div class="stats" style="margin-top:12px">'+
-      '<div class="stat">แปลงทั้งหมด<b>'+total+'</b></div>'+
-      '<div class="stat">ตรวจแล้ว ปี '+latest.y+'<b>'+latest.visited+'</b></div>'+
-      '<div class="stat">ยังเป็นเกษตร ปี '+latest.y+'<b>'+latest.agri+'</b></div>'+
-      '<div class="stat">รอตรวจ ปี '+latest.y+'<b>'+latest.waiting+'</b></div></div>'+
-      '<h4>สรุปแยกตามปีภาษี</h4><table><tr><th>ปีภาษี</th><th>ตรวจแล้ว</th><th>ยังเป็นเกษตร</th><th>ไม่เป็นเกษตร</th><th>รอตรวจ</th></tr>'+
-      byYear.map(r=>'<tr><td>'+r.y+'</td><td>'+r.visited+'</td><td>'+r.agri+'</td><td>'+r.nonAgri+'</td><td>'+r.waiting+'</td></tr>').join("")+
-      '</table><h4 style="margin-top:18px">สรุปตามแขวง/ตำบล • ปี '+Number($("year").value)+'</h4>'+
-      '<table><tr><th>แขวง/ตำบล</th><th>แปลงทั้งหมด</th><th>ตรวจแล้ว</th><th>ยังเป็นเกษตร</th><th>ไม่เป็นเกษตร</th></tr>'+
-      subRows.map(r=>'<tr><td>'+esc(r.s)+'</td><td>'+r.total+'</td><td>'+r.visited+'</td><td>'+r.agri+'</td><td>'+r.nonAgri+'</td></tr>').join("")+
-      '</table><div class="help" style="margin-top:12px">รายงานนี้คำนวณจากข้อมูลในฐานข้อมูลกลาง ณ เวลาที่เปิดรายงาน และไม่แก้ไขข้อมูลเดิม</div>';
+    renderReport(all||[],Number($("year").value));
     $("reportModal").classList.remove("hidden");
   }catch(e){showMsg("สร้างรายงานไม่สำเร็จ: "+e.message);}
   finally{btn.disabled=false;btn.textContent="📊 รายงานสรุป";}
+}
+
+function renderReport(all,reportYear){
+  const years=[...new Set([...YEARS,...all.map(x=>x.tax_year)])].sort((a,b)=>a-b);
+  const total=plots.length;
+  const byYear=years.map(y=>{
+    const rows=all.filter(x=>x.tax_year===y);
+    const visited=rows.filter(x=>x.visited).length;
+    const agri=rows.filter(x=>x.visited&&x.is_agricultural===true).length;
+    const nonAgri=rows.filter(x=>x.visited&&x.is_agricultural===false).length;
+    return {y,visited,agri,nonAgri,waiting:Math.max(0,total-visited)};
+  });
+  const selectedYear=byYear.find(r=>r.y===reportYear)||{y:reportYear,visited:0,agri:0,nonAgri:0,waiting:total};
+  const subs=[...new Set(plots.map(p=>p.subdistrict||"ไม่ระบุ"))].sort((a,b)=>a.localeCompare(b,"th"));
+  const subRows=subs.map(s=>{
+    const ids=new Set(plots.filter(p=>(p.subdistrict||"ไม่ระบุ")===s).map(p=>p.id));
+    const rows=all.filter(i=>i.tax_year===reportYear&&ids.has(i.plot_id));
+    return {s,total:ids.size,visited:rows.filter(i=>i.visited).length,agri:rows.filter(i=>i.visited&&i.is_agricultural===true).length,nonAgri:rows.filter(i=>i.visited&&i.is_agricultural===false).length};
+  });
+  $("reportContent").innerHTML=
+    '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px">'+
+    '<label style="margin:0;font-weight:700">เลือกปี พ.ศ.</label>'+
+    '<select id="reportYear">'+years.map(y=>'<option value="'+y+'" '+(y===reportYear?"selected":"")+'>'+y+'</option>').join("")+'</select></div>'+
+    '<div class="stats" style="margin-top:12px">'+
+    '<div class="stat">แปลงทั้งหมด<b>'+total+'</b></div>'+
+    '<div class="stat">ตรวจแล้ว ปี '+selectedYear.y+'<b>'+selectedYear.visited+'</b></div>'+
+    '<div class="stat">ยังเป็นเกษตร ปี '+selectedYear.y+'<b>'+selectedYear.agri+'</b></div>'+
+    '<div class="stat">รอตรวจ ปี '+selectedYear.y+'<b>'+selectedYear.waiting+'</b></div></div>'+
+    '<h4>สรุปแยกตามปีภาษี</h4><table><tr><th>ปีภาษี</th><th>ตรวจแล้ว</th><th>ยังเป็นเกษตร</th><th>ไม่เป็นเกษตร</th><th>รอตรวจ</th></tr>'+
+    byYear.map(r=>'<tr><td>'+r.y+'</td><td>'+r.visited+'</td><td>'+r.agri+'</td><td>'+r.nonAgri+'</td><td>'+r.waiting+'</td></tr>').join("")+
+    '</table><h4 style="margin-top:18px">สรุปตามแขวง/ตำบล • ปี '+reportYear+'</h4>'+
+    '<table><tr><th>แขวง/ตำบล</th><th>แปลงทั้งหมด</th><th>ตรวจแล้ว</th><th>ยังเป็นเกษตร</th><th>ไม่เป็นเกษตร</th></tr>'+
+    subRows.map(r=>'<tr><td>'+esc(r.s)+'</td><td>'+r.total+'</td><td>'+r.visited+'</td><td>'+r.agri+'</td><td>'+r.nonAgri+'</td></tr>').join("")+
+    '</table><div class="help" style="margin-top:12px">รายงานนี้คำนวณจากข้อมูลในฐานข้อมูลกลาง ณ เวลาที่เปิดรายงาน และไม่แก้ไขข้อมูลเดิม</div>';
+  $("reportYear").addEventListener("change",e=>renderReport(all,Number(e.target.value)));
 }
 
 function findPlot(){
