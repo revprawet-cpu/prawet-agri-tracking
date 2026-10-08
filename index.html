@@ -442,7 +442,7 @@ async function detailPieHtml(y){
     '</div></div>';
 }
 
-function openPlot(id){
+async function openPlot(id){
   selected=plots.find(p=>p.id===id);if(!selected)return;
   const y=Number($("year").value);
   const current=inspectionFor(id)||{plot_id:id,tax_year:y,visited:false,is_agricultural:null,inspection_date:"",inspector_name:"",notes:""};
