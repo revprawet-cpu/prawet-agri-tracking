@@ -10,7 +10,7 @@
 header{background:#176b43;color:#fff;padding:16px 22px}header h1{margin:0;font-size:21px}
 .wrap{max-width:1400px;margin:auto;padding:16px}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 button,select,input,textarea{font:inherit}button{border:0;border-radius:8px;padding:9px 13px;cursor:pointer;background:#176b43;color:#fff}
-button.secondary{background:#e8f0eb;color:#174c35}select,input,textarea{padding:9px;border:1px solid #cbd8d0;border-radius:8px;background:#fff}
+button.secondary{background:#e8f0eb;color:#174c35}button.danger{background:#a83d3d}.modal{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999}.modalbox{background:#fff;border-radius:14px;max-width:980px;width:100%;max-height:90vh;overflow:auto;padding:20px}.modalhead{display:flex;justify-content:space-between;align-items:center;gap:10px}.modalhead h3{margin:0}.preview{max-height:260px;overflow:auto;border:1px solid #dce7e0;border-radius:8px;margin-top:10px}.preview table{min-width:760px}.help{background:#f4f8f5;padding:10px;border-radius:8px;font-size:13px;color:#52695d}select,input,textarea{padding:9px;border:1px solid #cbd8d0;border-radius:8px;background:#fff}
 .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.card{background:#fff;border:1px solid #dce7e0;border-radius:14px;padding:16px;box-shadow:0 2px 10px #0000000a}
 #map{height:560px;border-radius:10px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}.stat{background:#eef6f1;padding:13px;border-radius:10px}.stat b{display:block;font-size:24px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}label{display:block;font-size:13px;font-weight:700;margin:9px 0 5px}
@@ -35,7 +35,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 <label style="margin:0;display:flex;align-items:center;gap:6px">ปีภาษี
 <select id="year"></select></label>
 <input id="search" placeholder="ค้นหารหัสแปลง / เลขเอกสารสิทธิ์" style="max-width:280px">
-<button id="findPlot">🔎 ค้นหา</button><button id="reload">↻ รีเฟรช</button>
+<button id="findPlot">🔎 ค้นหา</button><button id="addPlot">➕ เพิ่มแปลง</button><button id="importExcel">📥 นำเข้า Excel</button><button id="reload">↻ รีเฟรช</button>
 </div>
 <div class="grid">
 <section class="card">
@@ -49,7 +49,31 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 </section>
 </div>
 </main>
+<div id="addModal" class="modal hidden">
+  <div class="modalbox">
+    <div class="modalhead"><h3>➕ เพิ่มข้อมูลแปลงใหม่</h3><button class="secondary" id="closeAdd">ปิด</button></div>
+    <div class="help">กรอกข้อมูลแปลงแล้วกดบันทึก ระบบจะเพิ่มเป็นแปลงใหม่ โดยไม่กระทบประวัติการตรวจและรูปภาพของแปลงอื่น</div>
+    <div class="row"><div><label>รหัสแปลง *</label><input id="aCode" placeholder="เช่น P06"></div><div><label>เลขเอกสารสิทธิ์</label><input id="aDeed"></div></div>
+    <div class="row"><div><label>ละติจูด</label><input id="aLat" type="number" step="any"></div><div><label>ลองจิจูด</label><input id="aLng" type="number" step="any"></div></div>
+    <div class="row"><div><label>ไร่</label><input id="aRai" type="number" min="0" value="0"></div><div><label>งาน</label><input id="aNgan" type="number" min="0" value="0"></div></div>
+    <div><row><label>ตารางวา</label><input id="aWah" type="number" min="0" step="0.01" value="0"></div>
+    <div class="row"><div><label>แขวง/ตำบล</label><input id="aSub" value="ดอกไม้"></div><div><label>เขต</label><input id="aDistrict" value="ประเวศ"></div></div>
+    <div class="row"><div><label>การใช้ประโยชน์ที่ดิน</label><input id="aLand"></div><div><label>ชนิดพืช</label><input id="aCrop"></div></div>
+    <div class="toolbar" style="margin-top:12px"><button id="saveAdd">💾 บันทึกแปลงใหม่</button></div>
+  </div>
+</div>
+<div id="excelModal" class="modal hidden">
+  <div class="modalbox">
+    <div class="modalhead"><h3>📥 นำเข้าข้อมูลแปลงจาก Excel</h3><button class="secondary" id="closeExcel">ปิด</button></div>
+    <div class="help">รองรับ .xlsx, .xls และ .csv ใช้แถวแรกเป็นหัวตาราง ระบบจะอ่านข้อมูลแปลงและแสดงตัวอย่างก่อนนำเข้า รหัสแปลงที่มีอยู่แล้วจะข้ามเพื่อไม่ทับข้อมูลเดิม</div>
+    <label>เลือกไฟล์ Excel</label><input id="excelFile" type="file" accept=".xlsx,.xls,.csv">
+    <div id="excelInfo" class="muted" style="margin-top:8px"></div>
+    <div id="excelPreview" class="preview"></div>
+    <div class="toolbar" style="margin-top:12px"><button id="doImport" class="hidden">📥 นำเข้าข้อมูลตามตัวอย่าง</button></div>
+  </div>
+</div>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 "use strict";
@@ -76,6 +100,13 @@ async function init(){
     $("search").addEventListener("input",renderList);
     $("search").addEventListener("keydown",e=>{if(e.key==="Enter")findPlot();});
     $("findPlot").addEventListener("click",findPlot);
+    $("addPlot").addEventListener("click",openAddPlot);
+    $("closeAdd").addEventListener("click",closeAddPlot);
+    $("saveAdd").addEventListener("click",saveNewPlot);
+    $("importExcel").addEventListener("click",openExcelImport);
+    $("closeExcel").addEventListener("click",closeExcelImport);
+    $("excelFile").addEventListener("change",previewExcel);
+    $("doImport").addEventListener("click",importExcelData);
     $("reload").addEventListener("click",loadAll);
     await loadAll();
   }catch(e){showMsg("เปิดระบบไม่สำเร็จ: "+e.message);}
@@ -109,6 +140,91 @@ function renderMap(){
     m.on("click",()=>openPlot(p.id));m.addTo(map);markers.push(m);bounds.push([p.latitude,p.longitude]);
   }
   if(bounds.length)map.fitBounds(bounds,{padding:[25,25]});
+}
+function openAddPlot(){ $("addModal").classList.remove("hidden"); $("aCode").focus(); }
+function closeAddPlot(){ $("addModal").classList.add("hidden"); }
+function numOrNull(id){const v=$(id).value.trim();return v===""?null:Number(v);}
+async function saveNewPlot(){
+  const code=$("aCode").value.trim();
+  if(!code){showMsg("กรุณาระบุรหัสแปลง");return;}
+  if(plots.some(p=>String(p.plot_code).toLowerCase()===code.toLowerCase())){showMsg("มีรหัสแปลงนี้อยู่แล้ว: "+code);return;}
+  const payload={plot_code:code,title_deed_no:$("aDeed").value.trim()||null,
+    latitude:numOrNull("aLat"),longitude:numOrNull("aLng"),
+    area_rai:Number($("aRai").value||0),area_ngan:Number($("aNgan").value||0),area_wah:Number($("aWah").value||0),
+    subdistrict:$("aSub").value.trim()||null,district:$("aDistrict").value.trim()||null,
+    land_use:$("aLand").value.trim()||null,crop:$("aCrop").value.trim()||null};
+  const {data,error}=await db.from("plots").insert(payload).select().single();
+  if(error){showMsg("เพิ่มแปลงไม่สำเร็จ: "+error.message);return;}
+  plots.push(data);plots.sort((a,b)=>String(a.plot_code).localeCompare(String(b.plot_code),"th"));
+  closeAddPlot();$("aCode").value="";$("aDeed").value="";$("aLat").value="";$("aLng").value="";
+  showMsg("เพิ่มแปลง "+code+" เรียบร้อยแล้ว","success");render();await openPlot(data.id);
+}
+function openExcelImport(){ $("excelModal").classList.remove("hidden"); $("excelFile").value=""; $("excelInfo").textContent=""; $("excelPreview").innerHTML=""; $("doImport").classList.add("hidden"); window._excelRows=[]; }
+function closeExcelImport(){ $("excelModal").classList.add("hidden"); }
+function normHeader(v){return String(v??"").trim().toLowerCase().replace(/[\\s_\\-\\/()\\[\\]\\.]/g,"");}
+const EXCEL_MAP={
+  plot_code:["รหัสแปลง","รหัส","plotcode","plot_code"],
+  title_deed_no:["เลขเอกสารสิทธิ์","เลขที่โฉนด","เลขโฉนด","titledeedno","titledeed"],
+  latitude:["ละติจูด","latitude","lat"],
+  longitude:["ลองจิจูด","longitude","lon","lng"],
+  area_rai:["ไร่","area_rai","rai"],
+  area_ngan:["งาน","area_ngan","ngan"],
+  area_wah:["ตารางวา","ตร.ว.","area_wah","wah"],
+  subdistrict:["แขวง","ตำบล","subdistrict"],
+  district:["เขต","อำเภอ","district"],
+  land_use:["การใช้ประโยชน์ที่ดิน","landuse","land_use"],
+  crop:["ชนิดพืช","crop"]
+};
+function getExcelField(row,field){
+  const aliases=EXCEL_MAP[field].map(normHeader);
+  const key=Object.keys(row).find(k=>aliases.includes(normHeader(k)));
+  return key===undefined?null:row[key];
+}
+function excelNumber(v){if(v===null||v===undefined||v==="")return null;const n=Number(String(v).replace(/,/g,""));return Number.isFinite(n)?n:null;}
+function buildExcelRows(rows){
+  const seen=new Set(), out=[], errors=[];
+  rows.forEach((r,idx)=>{
+    const code=String(getExcelField(r,"plot_code")??"").trim();
+    if(!code){errors.push("แถว "+(idx+2)+": ไม่มีรหัสแปลง");return;}
+    const key=code.toLowerCase();
+    if(seen.has(key)){errors.push("แถว "+(idx+2)+": รหัสแปลงซ้ำในไฟล์ (ข้าม)");return;}
+    seen.add(key);
+    const existing=plots.some(p=>String(p.plot_code).toLowerCase()===key);
+    if(existing){errors.push("แถว "+(idx+2)+": รหัส "+code+" มีอยู่ในระบบแล้ว (ข้าม)");return;}
+    out.push({plot_code:code,title_deed_no:String(getExcelField(r,"title_deed_no")??"").trim()||null,
+      latitude:excelNumber(getExcelField(r,"latitude")),longitude:excelNumber(getExcelField(r,"longitude")),
+      area_rai:excelNumber(getExcelField(r,"area_rai"))??0,area_ngan:excelNumber(getExcelField(r,"area_ngan"))??0,area_wah:excelNumber(getExcelField(r,"area_wah"))??0,
+      subdistrict:String(getExcelField(r,"subdistrict")??"").trim()||null,district:String(getExcelField(r,"district")??"").trim()||null,
+      land_use:String(getExcelField(r,"land_use")??"").trim()||null,crop:String(getExcelField(r,"crop")??"").trim()||null});
+  });
+  return {out,errors};
+}
+async function previewExcel(){
+  const file=$("excelFile").files[0]; if(!file)return;
+  try{
+    const buf=await file.arrayBuffer(), wb=XLSX.read(buf,{type:"array",cellDates:true});
+    const ws=wb.Sheets[wb.SheetNames[0]], rows=XLSX.utils.sheet_to_json(ws,{defval:""});
+    const result=buildExcelRows(rows);window._excelRows=result.out;
+    $("excelInfo").innerHTML="พบ "+rows.length+" แถว • พร้อมนำเข้า "+result.out.length+" แปลง"+(result.errors.length?" • ข้าม "+result.errors.length+" แถว":"");
+    const sample=result.out.slice(0,20);
+    $("excelPreview").innerHTML=sample.length?'<table><tr><th>รหัส</th><th>เอกสารสิทธิ์</th><th>พิกัด</th><th>พื้นที่</th><th>แขวง/ตำบล</th><th>การใช้ที่ดิน</th><th>พืช</th></tr>'+sample.map(p=>'<tr><td>'+esc(p.plot_code)+'</td><td>'+esc(p.title_deed_no||'-')+'</td><td>'+esc(p.latitude??'-')+', '+esc(p.longitude??'-')+'</td><td>'+p.area_rai+'-'+p.area_ngan+'-'+p.area_wah+'</td><td>'+esc(p.subdistrict||'-')+'</td><td>'+esc(p.land_use||'-')+'</td><td>'+esc(p.crop||'-')+'</td></tr>').join("")+"</table>":'<div class="muted" style="padding:10px">ไม่มีแถวที่พร้อมนำเข้า</div>';
+    if(result.errors.length)$("excelPreview").innerHTML+='<div class="error" style="margin-top:10px">'+result.errors.slice(0,30).map(esc).join("<br>")+(result.errors.length>30?"<br>...":"")+'</div>';
+    $("doImport").classList.toggle("hidden",result.out.length===0);
+  }catch(e){showMsg("อ่านไฟล์ Excel ไม่สำเร็จ: "+e.message);window._excelRows=[];}
+}
+async function importExcelData(){
+  const rows=window._excelRows||[]; if(!rows.length)return;
+  const btn=$("doImport");btn.disabled=true;btn.textContent="กำลังนำเข้า...";
+  let ok=0,fail=0;
+  for(const row of rows){
+    const {data,error}=await db.from("plots").insert(row).select().single();
+    if(error){fail++;}else{ok++;plots.push(data);}
+  }
+  plots.sort((a,b)=>String(a.plot_code).localeCompare(String(b.plot_code),"th"));render();
+  btn.disabled=false;btn.textContent="📥 นำเข้าข้อมูลตามตัวอย่าง";
+  closeExcelImport();
+  showMsg("นำเข้าสำเร็จ "+ok+" แปลง"+(fail?" • ไม่สำเร็จ "+fail+" แปลง":""),fail?"error":"success");
+  if(ok)await loadInspections();
 }
 function findPlot(){
   const q=$("search").value.trim().toLowerCase();
