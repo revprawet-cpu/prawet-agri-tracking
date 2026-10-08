@@ -179,7 +179,7 @@ function renderMap(){
 function openAddPlot(){ $("addModal").classList.remove("hidden"); $("aCode").focus(); }
 function closeAddPlot(){ $("addModal").classList.add("hidden"); }
 function numOrNull(id){const v=$(id).value.trim();return v===""?null:Number(v);}
-async async function saveNewPlot(){
+async function saveNewPlot(){
   const code=$("aCode").value.trim();
   if(!code){showMsg("กรุณาระบุรหัสแปลง");return;}
   if(plots.some(p=>String(p.plot_code).toLowerCase()===code.toLowerCase())){showMsg("มีรหัสแปลงนี้อยู่แล้ว: "+code);return;}
