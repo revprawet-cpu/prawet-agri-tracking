@@ -35,7 +35,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px;borde
 <label style="margin:0;display:flex;align-items:center;gap:6px">ปีภาษี
 <select id="year"></select></label>
 <input id="search" placeholder="ค้นหารหัสแปลง / เลขเอกสารสิทธิ์" style="max-width:280px">
-<button id="findPlot">🔎 ค้นหา</button><button id="addPlot">➕ เพิ่มแปลง</button><button id="importExcel">📥 นำเข้า Excel</button><button id="reload">↻ รีเฟรช</button>
+<button id="findPlot">🔎 ค้นหา</button><button id="addPlot">➕ เพิ่มแปลง</button><button id="importExcel">📥 นำเข้า Excel</button><button id="exportExcel" class="secondary">📤 ส่งออก Excel</button><button id="reload">↻ รีเฟรช</button>
 </div>
 <div class="grid">
 <section class="card">
@@ -104,6 +104,7 @@ async function init(){
     $("closeAdd").addEventListener("click",closeAddPlot);
     $("saveAdd").addEventListener("click",saveNewPlot);
     $("importExcel").addEventListener("click",openExcelImport);
+    $("exportExcel").addEventListener("click",exportExcel);
     $("closeExcel").addEventListener("click",closeExcelImport);
     $("excelFile").addEventListener("change",previewExcel);
     $("doImport").addEventListener("click",importExcelData);
@@ -226,6 +227,66 @@ async function importExcelData(){
   showMsg("นำเข้าสำเร็จ "+ok+" แปลง"+(fail?" • ไม่สำเร็จ "+fail+" แปลง":""),fail?"error":"success");
   if(ok)await loadInspections();
 }
+async function exportExcel(){
+  try{
+    if(!plots.length){showMsg("ยังไม่มีข้อมูลแปลงสำหรับส่งออก");return;}
+    const btn=$("exportExcel");btn.disabled=true;btn.textContent="กำลังเตรียม Excel...";
+    const {data:allInspections,error}=await db.from("inspections").select("*").order("tax_year",{ascending:true});
+    if(error)throw error;
+    const currentYear=Number($("year").value);
+    const currentMap=new Map((allInspections||[]).filter(i=>i.tax_year===currentYear).map(i=>[i.plot_id,i]));
+    const plotRows=plots.map(p=>{
+      const i=currentMap.get(p.id);
+      return {
+        "รหัสแปลง":p.plot_code,
+        "เลขเอกสารสิทธิ์":p.title_deed_no||"",
+        "ละติจูด":p.latitude??"",
+        "ลองจิจูด":p.longitude??"",
+        "ไร่":p.area_rai??0,
+        "งาน":p.area_ngan??0,
+        "ตารางวา":p.area_wah??0,
+        "แขวง/ตำบล":p.subdistrict||"",
+        "เขต":p.district||"",
+        "การใช้ประโยชน์ที่ดิน":p.land_use||"",
+        "ชนิดพืช":p.crop||"",
+        "ปีภาษีที่เลือก":currentYear,
+        "ลงพื้นที่แล้ว":i?.visited===true?"ใช่":i?.visited===false?"ไม่":"ยังไม่มีข้อมูล",
+        "สถานะการเกษตร":i?.is_agricultural===true?"ยังเป็นเกษตร":i?.is_agricultural===false?"ไม่เป็นเกษตร":"ยังไม่ระบุ",
+        "วันที่ตรวจ":i?.inspection_date||"",
+        "ผู้ตรวจ":i?.inspector_name||"",
+        "หมายเหตุ":i?.notes||""
+      };
+    });
+    const historyRows=(allInspections||[]).map(i=>{
+      const p=plots.find(x=>x.id===i.plot_id);
+      return {
+        "รหัสแปลง":p?.plot_code||"",
+        "เลขเอกสารสิทธิ์":p?.title_deed_no||"",
+        "ปีภาษี":i.tax_year,
+        "ลงพื้นที่แล้ว":i.visited===true?"ใช่":i.visited===false?"ไม่":"",
+        "สถานะการเกษตร":i.is_agricultural===true?"ยังเป็นเกษตร":i.is_agricultural===false?"ไม่เป็นเกษตร":"ยังไม่ระบุ",
+        "วันที่ตรวจ":i.inspection_date||"",
+        "ผู้ตรวจ":i.inspector_name||"",
+        "หมายเหตุ":i.notes||""
+      };
+    });
+    const wb=XLSX.utils.book_new();
+    const ws1=XLSX.utils.json_to_sheet(plotRows);
+    const ws2=XLSX.utils.json_to_sheet(historyRows);
+    ws1["!cols"]=[{wch:14},{wch:18},{wch:13},{wch:13},{wch:8},{wch:8},{wch:12},{wch:16},{wch:12},{wch:22},{wch:20},{wch:15},{wch:16},{wch:20},{wch:14},{wch:20},{wch:35}];
+    ws2["!cols"]=[{wch:14},{wch:18},{wch:12},{wch:16},{wch:20},{wch:14},{wch:20},{wch:40}];
+    XLSX.utils.book_append_sheet(wb,ws1,"ข้อมูลแปลง");
+    XLSX.utils.book_append_sheet(wb,ws2,"ประวัติการตรวจ");
+    const stamp=new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb,"ข้อมูลแปลงเกษตร_เขตประเวศ_"+stamp+".xlsx");
+    showMsg("ส่งออก Excel เรียบร้อยแล้ว • "+plots.length+" แปลง • ประวัติ "+historyRows.length+" รายการ","success");
+  }catch(e){
+    showMsg("ส่งออก Excel ไม่สำเร็จ: "+e.message);
+  }finally{
+    const btn=$("exportExcel");btn.disabled=false;btn.textContent="📤 ส่งออก Excel";
+  }
+}
+
 function findPlot(){
   const q=$("search").value.trim().toLowerCase();
   if(!q){showMsg("กรุณาระบุรหัสแปลงหรือเลขเอกสารสิทธิ์");return;}
