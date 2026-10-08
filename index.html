@@ -154,7 +154,7 @@ async function openPlot(id){
     '<div class="row"><div><label>วันที่ตรวจ</label><input id="fDate" type="date" value="'+esc(current.inspection_date||"")+'"></div><div><label>ผู้ตรวจ</label><input id="fInspector" value="'+esc(current.inspector_name||"")+'"></div></div>'+
     '<label>หมายเหตุ</label><textarea id="fNotes">'+esc(current.notes||"")+'</textarea>'+
     '<label>รูปถ่ายปี '+y+'</label><input id="fPhotos" type="file" accept="image/*" multiple><div id="photos" class="photos"></div>'+
-    '<div class="toolbar" style="margin-top:12px"><button id="save">💾 บันทึกข้อมูลปี '+y+'</button><button class="secondary" id="maps">📍 Google Maps</button></div>'+
+    '<div class="toolbar" style="margin-top:12px"><button id="save">💾 บันทึกข้อมูลปี '+y+'</button><button class="secondary" id="editPlot">✏️ แก้ไขข้อมูลแปลง</button><button class="secondary" id="maps">📍 Google Maps</button></div>'+
     '<hr><h4>ประวัติการตรวจย้อนหลัง</h4>'+
     '<table><tr><th>ปี</th><th>สถานะ</th><th>วันที่</th><th>ผู้ตรวจ</th></tr>'+
     (history||[]).map(h=>{const z=status(h);return "<tr><td>"+h.tax_year+"</td><td>"+z[1]+"</td><td>"+(h.inspection_date||"-")+"</td><td>"+esc(h.inspector_name||"-")+"</td></tr>";}).join("")+"</table>";
@@ -162,6 +162,32 @@ async function openPlot(id){
   $("maps").addEventListener("click",()=>window.open("https://www.google.com/maps?q="+selected.latitude+","+selected.longitude,"_blank"));
   await loadPhotos(current.id);
 }
+function showPlotEditor(p){
+  const d=$("detail");
+  d.innerHTML='<h4>✏️ แก้ไขข้อมูลแปลง '+esc(p.plot_code)+'</h4>'+
+    '<div class="row"><div><label>รหัสแปลง</label><input id="pCode" value="'+esc(p.plot_code)+'"></div><div><label>เลขเอกสารสิทธิ์</label><input id="pDeed" value="'+esc(p.title_deed_no||"")+'"></div></div>'+
+    '<div class="row"><div><label>ละติจูด</label><input id="pLat" type="number" step="any" value="'+(p.latitude??"")+'"></div><div><label>ลองจิจูด</label><input id="pLng" type="number" step="any" value="'+(p.longitude??"")+'"></div></div>'+
+    '<div class="row"><div><label>ไร่</label><input id="pRai" type="number" min="0" value="'+(p.area_rai??0)+'"></div><div><label>งาน</label><input id="pNgan" type="number" min="0" value="'+(p.area_ngan??0)+'"></div></div>'+
+    '<label>ตารางวา</label><input id="pWah" type="number" min="0" step="0.01" value="'+(p.area_wah??0)+'">'+
+    '<div class="row"><div><label>แขวง/ตำบล</label><input id="pSub" value="'+esc(p.subdistrict||"")+'"></div><div><label>เขต/อำเภอ</label><input id="pDistrict" value="'+esc(p.district||"")+'"></div></div>'+
+    '<div class="row"><div><label>การใช้ประโยชน์ที่ดิน</label><input id="pLand" value="'+esc(p.land_use||"")+'"></div><div><label>ชนิดพืช</label><input id="pCrop" value="'+esc(p.crop||"")+'"></div></div>'+
+    '<div class="toolbar" style="margin-top:12px"><button id="savePlot">💾 บันทึกข้อมูลแปลง</button><button class="secondary" id="cancelPlot">ยกเลิก</button></div>';
+  $("savePlot").addEventListener("click",savePlot);
+  $("cancelPlot").addEventListener("click",()=>openPlot(p.id));
+}
+async function savePlot(){
+  const code=$("pCode").value.trim();
+  if(!code){showMsg("กรุณาระบุรหัสแปลง");return;}
+  const payload={plot_code:code,title_deed_no:$("pDeed").value.trim()||null,
+    latitude:$("pLat").value===""?null:Number($("pLat").value),longitude:$("pLng").value===""?null:Number($("pLng").value),
+    area_rai:$("pRai").value===""?0:Number($("pRai").value),area_ngan:$("pNgan").value===""?0:Number($("pNgan").value),area_wah:$("pWah").value===""?0:Number($("pWah").value),
+    subdistrict:$("pSub").value.trim()||null,district:$("pDistrict").value.trim()||null,land_use:$("pLand").value.trim()||null,crop:$("pCrop").value.trim()||null,updated_at:new Date().toISOString()};
+  const {data,error}=await db.from("plots").update(payload).eq("id",selected.id).select().single();
+  if(error){showMsg("บันทึกข้อมูลแปลงไม่สำเร็จ: "+error.message);return;}
+  const idx=plots.findIndex(x=>x.id===selected.id);if(idx>=0)plots[idx]=data;selected=data;
+  showMsg("บันทึกข้อมูลแปลงเรียบร้อยแล้ว","success");render();await openPlot(data.id);
+}
+
 async function loadPhotos(inspectionId){
   const box=$("photos");if(!box)return;
   if(!inspectionId){box.innerHTML='<span class="muted">ยังไม่มีการบันทึกของปีนี้</span>';return;}
