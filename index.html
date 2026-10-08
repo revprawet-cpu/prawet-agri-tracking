@@ -332,23 +332,47 @@ async function openReport(){
   finally{btn.disabled=false;btn.textContent="📊 รายงานสรุป";}
 }
 
+function shadeColor(hex,percent){
+  const n=parseInt(hex.replace("#",""),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  const p=percent/100;
+  const rr=Math.max(0,Math.min(255,Math.round(r*(1-p))));
+  const gg=Math.max(0,Math.min(255,Math.round(g*(1-p))));
+  const bb=Math.max(0,Math.min(255,Math.round(b*(1-p))));
+  return "#"+[rr,gg,bb].map(v=>v.toString(16).padStart(2,"0")).join("");
+}
+function pieSlicePath(cx,cy,r,start,end,dy=0){
+  const x1=cx+r*Math.cos(start),y1=cy+r*Math.sin(start)+dy;
+  const x2=cx+r*Math.cos(end),y2=cy+r*Math.sin(end)+dy;
+  const large=end-start>Math.PI?1:0;
+  return "M "+cx+" "+(cy+dy)+" L "+x1+" "+y1+" A "+r+" "+r+" 0 "+large+" 1 "+x2+" "+y2+" Z";
+}
 function pieSvg(values){
   const total=values.reduce((a,b)=>a+b.value,0);
-  const cx=130,cy=130,r=92;
-  if(!total)return '<svg class="report-pie" viewBox="0 0 260 260"><circle cx="130" cy="130" r="92" fill="#e5ece8"></circle><text x="130" y="125" text-anchor="middle" font-size="16" fill="#52695d">ไม่มีข้อมูล</text><text x="130" y="148" text-anchor="middle" font-size="13" fill="#52695d">ปีนี้</text></svg>';
-  let angle=-Math.PI/2,paths="";
+  const cx=130,cy=112,r=92,depth=18;
+  if(!total)return '<svg class="report-pie" viewBox="0 0 260 250"><ellipse cx="130" cy="128" rx="92" ry="22" fill="#d5dfda"></ellipse><text x="130" y="112" text-anchor="middle" font-size="16" fill="#52695d">ไม่มีข้อมูล</text><text x="130" y="135" text-anchor="middle" font-size="13" fill="#52695d">ปีนี้</text></svg>';
+  let angle=-Math.PI/2,topPaths="",sidePaths="";
+  const slices=[];
   values.forEach(v=>{
     if(v.value<=0)return;
-    const a=v.value/total*Math.PI*2;
-    const x1=cx+r*Math.cos(angle),y1=cy+r*Math.sin(angle);
-    const end=angle+a,x2=cx+r*Math.cos(end),y2=cy+r*Math.sin(end);
-    const large=a>Math.PI?1:0;
-    paths+='<path d="M '+cx+' '+cy+' L '+x1+' '+y1+' A '+r+' '+r+' 0 '+large+' 1 '+x2+' '+y2+' Z" fill="'+v.color+'" stroke="#fff" stroke-width="2"></path>';
+    const a=v.value/total*Math.PI*2,end=angle+a;
+    slices.push({...v,start:angle,end});
     angle=end;
   });
-  return '<svg class="report-pie" viewBox="0 0 260 260" role="img" aria-label="กราฟวงกลมสรุปปี '+values.year+'">'+paths+'<circle cx="130" cy="130" r="48" fill="#fff"></circle><text x="130" y="126" text-anchor="middle" font-size="22" font-weight="700" fill="#173b2a">'+total+'</text><text x="130" y="148" text-anchor="middle" font-size="12" fill="#52695d">แปลง</text></svg>';
+  for(let d=depth;d>0;d-=2){
+    slices.forEach(v=>{
+      sidePaths+='<path d="'+pieSlicePath(cx,cy,r,v.start,v.end,d)+'" fill="'+shadeColor(v.color,28)+'" stroke="'+shadeColor(v.color,35)+'" stroke-width="1"></path>';
+    });
+  }
+  slices.forEach(v=>{
+    topPaths+='<path d="'+pieSlicePath(cx,cy,r,v.start,v.end,0)+'" fill="'+v.color+'" stroke="#fff" stroke-width="2"></path>';
+  });
+  return '<svg class="report-pie" viewBox="0 0 260 250" role="img" aria-label="กราฟวงกลม 3 มิติสรุปสถานะแปลง">'+
+    '<defs><filter id="pieShadow" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-opacity=".22"/></filter></defs>'+
+    '<g filter="url(#pieShadow)">'+sidePaths+topPaths+
+    '<ellipse cx="130" cy="112" rx="48" ry="22" fill="#fff" opacity=".96"></ellipse>'+
+    '<text x="130" y="112" text-anchor="middle" font-size="22" font-weight="700" fill="#173b2a">'+total+'</text>'+
+    '<text x="130" y="134" text-anchor="middle" font-size="12" fill="#52695d">แปลง</text></g></svg>';
 }
-
 function printReport(){
   document.body.classList.add("print-report");
   window.addEventListener("afterprint",()=>document.body.classList.remove("print-report"),{once:true});
@@ -425,7 +449,7 @@ function renderStats(){
   const a=inspections.filter(i=>i.visited&&i.is_agricultural===true).length;
   $("total").textContent=plots.length;$("visited").textContent=v;$("agri").textContent=a;$("waiting").textContent=Math.max(0,plots.length-v);
 }
-async function detailPieHtml(y){
+function detailPieHtml(y){
   const total=plots.length;
   const visited=inspections.filter(i=>i.visited).length;
   const agri=inspections.filter(i=>i.visited&&i.is_agricultural===true).length;
